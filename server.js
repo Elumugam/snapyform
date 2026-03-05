@@ -214,7 +214,7 @@ app.get('/api/auth/me', auth, (req, res) => {
     try {
         const u = readDB('users').find(u => u.id === req.user.id);
         if (!u) return res.status(404).json({ success: false, error: 'User not found' });
-        res.json({ success: true, user: safeUser(u) });
+        res.json(safeUser(u));
     } catch (error) {
         console.error('Get profile error:', error);
         res.status(500).json({ success: false, error: 'Failed to retrieve profile' });
@@ -1175,7 +1175,7 @@ app.delete('/api/webhooks/:id', auth, (req, res) => {
 // ╔═══════════════════════════════════════════════════════════════════════╗
 // ║  SPA ROUTING                                                          ║
 // ╚═══════════════════════════════════════════════════════════════════════╝
-const pages = { '/': false, '/dashboard': true, '/login': false, '/register': false, '/builder': true, '/responses': true, '/export': true, '/settings': true, '/templates': false, '/admin': true, '/automation': true };
+const pages = { '/': false, '/dashboard': true, '/login': false, '/register': false, '/builder': true, '/responses': true, '/export': true, '/analytics': true, '/settings': true, '/templates': false, '/admin': true, '/automation': true };
 Object.entries(pages).forEach(([p, _]) => {
     const file = p === '/' ? 'index' : p.slice(1);
     app.get(p, (req, res) => res.sendFile(path.join(__dirname, 'public', file + '.html')));
@@ -1193,8 +1193,8 @@ if (require.main === module) {
 ║   SnapyForm – running on port ${PORT}    ║
 ║   → http://localhost:${PORT}              ║
 ║                                       ║
-║   Admin:  admin@snapyform.com         ║
-║   Pass:   admin123                    ║
+║   Admin:  info.elumugam@gmail.com     ║
+║   Pass:   ADMINELUMUGAM               ║
 ║                                       ║
 ║   Demo:   demo@snapyform.com          ║
 ║   Pass:   demo1234                    ║
