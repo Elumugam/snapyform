@@ -332,16 +332,30 @@
                     onclick="document.getElementById('shareModal').classList.remove('open')">✕</button>
             </div>
             <div class="modal-body">
-                <div class="field"><label class="label">Public Link</label>
-                    <div class="flex gap-8"><input type="text" class="input" id="shareUrl" readonly
-                            style="font-family:monospace;font-size:12px"><button class="btn btn-secondary btn-sm"
-                            onclick="navigator.clipboard.writeText(document.getElementById('shareUrl').value);toast('Copied','success')">Copy</button>
+                <div class="field">
+                    <label class="label">Public Link</label>
+                    <div class="flex gap-8">
+                        <input type="text" class="input" id="shareLinkInput" readonly
+                            style="background:var(--surface-2)">
+                        <button class="btn btn-secondary" onclick="copyShareLink()">⎘ Copy</button>
                     </div>
                 </div>
-                <div class="field"><label class="label">Embed Code</label><textarea class="input" id="embedCode"
-                        readonly style="font-family:monospace;font-size:11px;min-height:60px"></textarea></div>
-                <button class="btn btn-primary btn-sm"
-                    onclick="window.open(document.getElementById('shareUrl').value,'_blank')">Open Form →</button>
+
+                <div style="margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+                    <button class="btn btn-secondary btn-sm" onclick="shareWhatsApp()">WhatsApp</button>
+                    <button class="btn btn-secondary btn-sm" onclick="shareEmail()">Email</button>
+                    <button class="btn btn-secondary btn-sm" onclick="openQR()">QR Code</button>
+                </div>
+
+                <div class="field" style="margin-top:20px">
+                    <label class="label">Embed in Website (HTML)</label>
+                    <textarea class="input" id="embedCode" readonly rows="3"
+                        style="font-family:monospace;font-size:11px;background:var(--surface-2)"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary"
+                    onclick="document.getElementById('shareModal').classList.remove('open')">Done</button>
             </div>
         </div>
     </div>
@@ -508,9 +522,31 @@
         function mv(id, d) { const i = fields.findIndex(f => f.id === id); const n = i + d; if (n < 0 || n >= fields.length) return;[fields[i], fields[n]] = [fields[n], fields[i]]; markUnsaved(); renderCanvas(); }
         function reorder(fid, tid) { const fi = fields.findIndex(f => f.id === fid), ti = fields.findIndex(f => f.id === tid); if (fi === -1 || ti === -1) return; const [item] = fields.splice(fi, 1); fields.splice(ti, 0, item); markUnsaved(); renderCanvas(); }
 
+        // Sharing
+        function openShare() {
+            const url = `${location.origin}/form/${formId}`;
+            document.getElementById('shareLinkInput').value = url;
+            document.getElementById('embedCode').value = `<iframe src="${url}" width="100%" height="600" frameborder="0"></iframe>`;
+            document.getElementById('shareModal').classList.add('open');
+            window.currentShareUrl = url;
+            window.currentShareTitle = document.getElementById('ftitle').value;
+        }
+
+        function copyShareLink() {
+            navigator.clipboard.writeText(document.getElementById('shareLinkInput').value).then(() => toast('Link copied!', 'success'));
+        }
+
+        function shareWhatsApp() {
+            window.open(`https://wa.me/?text=${encodeURIComponent('Please fill out this form: ' + window.currentShareTitle + ' ' + window.currentShareUrl)}`, '_blank');
+        }
+
+        function shareEmail() {
+            window.open(`mailto:?subject=${encodeURIComponent(window.currentShareTitle)}&body=${encodeURIComponent('Please fill out this form: ' + window.currentShareUrl)}`, '_self');
+        }
+
         // Modals
-        function openShare() { const url = `${location.origin}/form/${formId}`; document.getElementById('shareUrl').value = url; document.getElementById('embedCode').value = `<iframe src="${url}" width="100%" height="600" frameborder="0"></iframe>`; document.getElementById('shareModal').classList.add('open'); }
         function openAI() { document.getElementById('aiModal').classList.add('open'); setTimeout(() => document.getElementById('aiTxt').focus(), 100); }
+
         function openQR() {
             document.getElementById('qrModal').classList.add('open');
             const url = `${location.origin}/form/${formId}`;

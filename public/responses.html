@@ -90,6 +90,9 @@
                 <div class="nav-item" onclick="window.location='/dashboard#forms'">
                     <div class="nav-icon-wrap">📋</div><span class="nav-label">My Forms</span>
                 </div>
+                <div class="nav-item" onclick="window.location='/automation'">
+                    <div class="nav-icon-wrap">⚡</div><span class="nav-label">Automations</span>
+                </div>
                 <div class="nav-item" onclick="window.location='/templates'">
                     <div class="nav-icon-wrap">◧</div><span class="nav-label">Templates</span>
                 </div>
@@ -111,12 +114,17 @@
                 <div class="nav-item" onclick="window.location='/settings'">
                     <div class="nav-icon-wrap">◎</div><span class="nav-label">Settings</span>
                 </div>
+                <div class="nav-item" id="adminNavItem" style="display:none" onclick="window.location='/admin'">
+                    <div class="nav-icon-wrap">⚿</div><span class="nav-label">Admin</span><span class="admin-badge"
+                        style="margin-left:auto">ADMIN</span>
+                </div>
             </div>
             <div class="sidebar-footer">
                 <div class="user-widget" onclick="window.location='/settings'">
                     <div class="user-avatar" id="uAvatar">?</div>
                     <div>
                         <div class="user-name" id="uName">Loading...</div>
+                        <div class="user-plan" id="uPlan">Free Plan</div>
                     </div>
                     <div class="spacer"></div>
                     <span style="font-size:13px;color:var(--text-4);cursor:pointer;padding:4px"
@@ -180,7 +188,13 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             if (!DocmoAPI.requireAuth()) return;
-            const u = await DocmoAPI.getMe(); if (u) { document.getElementById('uAvatar').textContent = u.avatar || '?'; document.getElementById('uName').textContent = u.name || 'User'; }
+            const u = await DocmoAPI.getMe();
+            if (u) {
+                document.getElementById('uAvatar').textContent = u.avatar || '?';
+                document.getElementById('uName').textContent = u.name || 'User';
+                if (document.getElementById('uPlan')) document.getElementById('uPlan').textContent = (u.plan || 'Free') + ' Plan';
+                if (u.isAdmin && document.getElementById('adminNavItem')) document.getElementById('adminNavItem').style.display = '';
+            }
             allForms = await DocmoAPI.getForms().catch(() => []);
             const sel = document.getElementById('formSelect');
             sel.innerHTML = '<option value="">— Select a form —</option>' + allForms.map(f => `<option value="${f.id}"${f.id === currentFormId ? ' selected' : ''}>${DocmoAPI.escH(f.title)} (${f.responseCount || 0})</option>`).join('');

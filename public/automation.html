@@ -88,32 +88,57 @@
     <div class="app-layout">
         <aside class="sidebar">
             <div class="sidebar-logo" onclick="window.location='/'">
-                <div class="logo-mark">S</div><span class="logo-text">SnapyForm</span>
+                <div class="logo-mark">S</div>
+                <span class="logo-text">SnapyForm</span>
+                <span class="logo-badge">Beta</span>
             </div>
             <div class="sidebar-section">
+                <div class="sidebar-section-label">Workspace</div>
                 <div class="nav-item" onclick="window.location='/dashboard'">
-                    <div class="nav-icon-wrap">⊞</div><span>Dashboard</span>
+                    <div class="nav-icon-wrap">⊞</div><span class="nav-label">Dashboard</span>
                 </div>
-                <div class="nav-item active">
-                    <div class="nav-icon-wrap">⚡</div><span>Automations</span>
+                <div class="nav-item" onclick="window.location='/dashboard#forms'">
+                    <div class="nav-icon-wrap">📋</div><span class="nav-label">My Forms</span>
                 </div>
+                <div class="nav-item active" onclick="window.location='/automation'">
+                    <div class="nav-icon-wrap">⚡</div><span class="nav-label">Automations</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/templates'">
+                    <div class="nav-icon-wrap">◧</div><span class="nav-label">Templates</span>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Data & Performance</div>
                 <div class="nav-item" onclick="window.location='/responses'">
-                    <div class="nav-icon-wrap">≡</div><span>Responses</span>
+                    <div class="nav-icon-wrap">≡</div><span class="nav-label">Responses</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/analytics'">
+                    <div class="nav-icon-wrap">📈</div><span class="nav-label">Analytics</span>
                 </div>
                 <div class="nav-item" onclick="window.location='/export'">
-                    <div class="nav-icon-wrap">↓</div><span>Export</span>
+                    <div class="nav-icon-wrap">↓</div><span class="nav-label">Export</span>
                 </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Account</div>
                 <div class="nav-item" onclick="window.location='/settings'">
-                    <div class="nav-icon-wrap">◎</div><span>Settings</span>
+                    <div class="nav-icon-wrap">◎</div><span class="nav-label">Settings</span>
+                </div>
+                <div class="nav-item" id="adminNavItem" style="display:none" onclick="window.location='/admin'">
+                    <div class="nav-icon-wrap">⚿</div><span class="nav-label">Admin</span><span class="admin-badge"
+                        style="margin-left:auto">ADMIN</span>
                 </div>
             </div>
             <div class="sidebar-footer">
-                <div class="user-widget">
+                <div class="user-widget" onclick="window.location='/settings'">
                     <div class="user-avatar" id="uAvatar">?</div>
                     <div>
-                        <div class="user-name" id="uName">...</div>
-                    </div><span style="margin-left:auto;font-size:13px;cursor:pointer"
-                        onclick="DocmoAPI.logout()">⏻</span>
+                        <div class="user-name" id="uName">Loading...</div>
+                        <div class="user-plan" id="uPlan">Free Plan</div>
+                    </div>
+                    <div class="spacer"></div>
+                    <span style="font-size:13px;color:var(--text-4);cursor:pointer;padding:4px"
+                        onclick="event.stopPropagation();DocmoAPI.logout()" title="Logout">⏻</span>
                 </div>
             </div>
         </aside>
@@ -309,7 +334,12 @@
         window.addEventListener('DOMContentLoaded', async () => {
             if (!DocmoAPI.requireAuth()) return;
             const u = await DocmoAPI.getMe();
-            if (u) { document.getElementById('uAvatar').textContent = u.avatar || '?'; document.getElementById('uName').textContent = u.name || 'User'; }
+            if (u) {
+                document.getElementById('uAvatar').textContent = u.avatar || '?';
+                document.getElementById('uName').textContent = u.name || 'User';
+                if (document.getElementById('uPlan')) document.getElementById('uPlan').textContent = (u.plan || 'Free') + ' Plan';
+                if (u.isAdmin && document.getElementById('adminNavItem')) document.getElementById('adminNavItem').style.display = '';
+            }
             forms = await DocmoAPI.getForms().catch(() => []);
             const opts = forms.map(f => `<option value="${f.id}">${DocmoAPI.escH(f.title)}</option>`).join('');
             document.getElementById('rForm').innerHTML = opts;
