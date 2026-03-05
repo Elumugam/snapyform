@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Center – Docmo</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="js/db.js"></script>
+    <!-- SheetJS for real Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF for PDF -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            background: var(--bg-primary);
+        }
+
+        .export-card {
+            padding: 22px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            border-radius: var(--radius-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .export-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .export-icon {
+            font-size: 44px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .export-format {
+            font-size: 16px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .export-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .export-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .mapping-row {
+            display: grid;
+            grid-template-columns: 1fr 32px 1fr;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .hist-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .hist-row:last-child {
+            border-bottom: none;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            padding: 11px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 999;
+            color: white;
+            animation: fadeInUp .3s ease;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="index.html" class="sidebar-logo">
+            <div class="logo-icon">📋</div><span>Docmo</span>
+        </a>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+            <a href="dashboard.html" class="nav-item"><span class="nav-icon">📋</span> My Forms</a>
+            <a href="responses.html" class="nav-item"><span class="nav-icon">📊</span> Responses</a>
+            <a href="export.html" class="nav-item active"><span class="nav-icon">📥</span> Export</a>
+            <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="uAvatar">JS</div>
+                <div>
+                    <div style="font-size:13px;font-weight:600" id="uName">User</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Export Center</h1>
+                <p class="page-subtitle">Download your data in any format</p>
+            </div>
+        </div>
+
+        <!-- Form & Filter Selector -->
+        <div class="card mb-20">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:end">
+                <div class="input-group">
+                    <label class="input-label">Select Form</label>
+                    <select class="input-field" id="formSelect" onchange="onFormChange()"></select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">From Date</label>
+                    <input type="date" class="input-field" id="dateFrom">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">To Date</label>
+                    <input type="date" class="input-field" id="dateTo">
+                </div>
+            </div>
+            <div class="flex gap-10 mt-14 items-center flex-wrap">
+                <span style="font-size:13px;color:var(--text-muted)">Status to include:</span>
+                <label class="flex items-center gap-4 text-sm cursor-pointer"><input type="checkbox" id="inclAll"
+                        checked onchange="syncFilters('all')" style="accent-color:var(--accent)"> All</label>
+                <label class="flex items-center gap-4 text-sm cursor-pointer"><input type="checkbox" id="inclComplete"
+                        style="accent-color:var(--accent)"> Complete only</label>
+                <div class="badge badge-accent ml-auto" id="recordCount">0 records</div>
+            </div>
+        </div>
+
+        <!-- Export Formats -->
+        <div class="section-header mb-16">
+            <div class="section-title">Export Format</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px">
+            <div class="card export-card" onclick="doExport('xlsx')">
+                <span class="export-icon">📊</span>
+                <div
+                    style="display:inline-block;padding:2px 10px;border-radius:999px;background:#217346;color:white;font-size:11px;font-weight:700;margin-bottom:8px">
+                    .xlsx</div>
+                <div class="export-format">Excel</div>
+                <div class="export-desc">Spreadsheet format for Excel, Google Sheets</div>
+                <button class="export-btn" style="background:linear-gradient(135deg,#217346,#1a5c37);color:white">⬇️
+                    Download Excel</button>
+            </div>
+            <div class="card export-card" onclick="doExport('csv')">
+                <span class="export-icon">📄</span>
+                <div
+                    style="display:inline-block;padding:2px 10px;border-radius:999px;background:#0ea5e9;color:white;font-size:11px;font-weight:700;margin-bottom:8px">
+                    .csv</div>
+                <div class="export-format">CSV</div>
+                <div class="export-desc">Universal format for any database or tool</div>
+                <button class="export-btn" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);color:white">⬇️
+                    Download CSV</button>
+            </div>
+            <div class="card export-card" onclick="doExport('json')">
+                <span class="export-icon" style="font-family:monospace;font-size:32px">{ }</span>
+                <div
+                    style="display:inline-block;padding:2px 10px;border-radius:999px;background:#f59e0b;color:white;font-size:11px;font-weight:700;margin-bottom:8px">
+                    .json</div>
+                <div class="export-format">JSON</div>
+                <div class="export-desc">Structured data for developers and APIs</div>
+                <button class="export-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:white">⬇️
+                    Download JSON</button>
+            </div>
+            <div class="card export-card" onclick="doExport('pdf')">
+                <span class="export-icon">📕</span>
+                <div
+                    style="display:inline-block;padding:2px 10px;border-radius:999px;background:#f43f5e;color:white;font-size:11px;font-weight:700;margin-bottom:8px">
+                    .pdf</div>
+                <div class="export-format">PDF Report</div>
+                <div class="export-desc">Printable summary report with all responses</div>
+                <button class="export-btn" style="background:linear-gradient(135deg,#f43f5e,#e11d48);color:white">⬇️
+                    Download PDF</button>
+            </div>
+            <div class="card export-card" onclick="doExport('sql')">
+                <span class="export-icon">🗄️</span>
+                <div
+                    style="display:inline-block;padding:2px 10px;border-radius:999px;background:#8b5cf6;color:white;font-size:11px;font-weight:700;margin-bottom:8px">
+                    .sql</div>
+                <div class="export-format">SQL Dump</div>
+                <div class="export-desc">Ready-to-import SQL INSERT statements</div>
+                <button class="export-btn" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:white">⬇️
+                    Download SQL</button>
+            </div>
+            <div class="card export-card" onclick="doExport('txt')">
+                <span class="export-icon">📋</span>
+                <div
+                    style="display:inline-block;padding:2px 10px;border-radius:999px;background:var(--emerald);color:white;font-size:11px;font-weight:700;margin-bottom:8px">
+                    .txt</div>
+                <div class="export-format">Plain Text</div>
+                <div class="export-desc">Simple human-readable text format</div>
+                <button class="export-btn"
+                    style="background:linear-gradient(135deg,var(--emerald),#059669);color:white">⬇️ Download
+                    TXT</button>
+            </div>
+        </div>
+
+        <!-- Smart Mapping -->
+        <div class="card mb-20">
+            <div class="section-header mb-16">
+                <div class="section-title">🗺️ Smart Column Mapping</div>
+                <div class="badge badge-accent">Optional</div>
+            </div>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">Rename field labels to custom
+                column names in the export</p>
+            <div id="mappingArea">
+                <p style="font-size:13px;color:var(--text-muted)">Select a form to see column mappings</p>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+                <button class="btn btn-secondary btn-sm" onclick="resetMapping()">Reset</button>
+                <button class="btn btn-primary btn-sm" onclick="showToast('✅ Mapping saved!','var(--emerald)')">💾 Save
+                    Mapping</button>
+            </div>
+        </div>
+
+        <!-- Export History (last 10, stored in localStorage) -->
+        <div class="card">
+            <div class="section-header mb-8">
+                <div class="section-title">Export History</div><button class="btn btn-ghost btn-sm"
+                    onclick="clearHistory()">Clear</button>
+            </div>
+            <div id="historyArea">
+                <p style="font-size:13px;color:var(--text-muted);padding:12px 0">No exports yet</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        DocmoDB.init();
+        const params = new URLSearchParams(location.search);
+        let selectedFormId = params.get('id') || '';
+        let columnMappings = {};
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applyTheme();
+            loadUser();
+            buildFormSelector();
+            buildDateDefaults();
+            loadHistory();
+        });
+
+        function applyTheme() {
+            const user = DocmoDB.getUser();
+            if (user.theme) document.documentElement.setAttribute('data-theme', user.theme);
+        }
+        function loadUser() {
+            const u = DocmoDB.getUser();
+            document.getElementById('uAvatar').textContent = u.avatar || 'U';
+            document.getElementById('uName').textContent = u.name || 'User';
+        }
+
+        function buildFormSelector() {
+            const forms = DocmoDB.getForms();
+            const sel = document.getElementById('formSelect');
+            sel.innerHTML = '<option value="">— All Forms —</option>' + forms.map(f => `<option value="${f.id}"${f.id === selectedFormId ? ' selected' : ''}>${escHtml(f.title)} (${f.responseCount || 0} responses)</option>`).join('');
+            onFormChange();
+        }
+
+        function buildDateDefaults() {
+            const to = new Date(); const from = new Date(to); from.setMonth(from.getMonth() - 1);
+            document.getElementById('dateTo').value = to.toISOString().slice(0, 10);
+            document.getElementById('dateFrom').value = from.toISOString().slice(0, 10);
+        }
+
+        function syncFilters(changed) {
+            if (changed === 'all' && document.getElementById('inclAll').checked) document.getElementById('inclComplete').checked = false;
+            if (changed !== 'all') document.getElementById('inclAll').checked = false;
+        }
+
+        function onFormChange() {
+            selectedFormId = document.getElementById('formSelect').value;
+            updateCount();
+            buildMapping();
+        }
+
+        function getFilteredResponses() {
+            let r = selectedFormId ? DocmoDB.getResponses(selectedFormId) : DocmoDB.getResponses();
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
+            if (from) r = r.filter(x => new Date(x.submittedAt) >= new Date(from));
+            if (to) r = r.filter(x => new Date(x.submittedAt) <= new Date(to + 'T23:59:59'));
+            return r;
+        }
+
+        function updateCount() {
+            const r = getFilteredResponses();
+            document.getElementById('recordCount').textContent = r.length + ' record' + (r.length !== 1 ? 's' : '') + ' selected';
+        }
+
+        function buildMapping() {
+            let fields = [];
+            if (selectedFormId) {
+                const form = DocmoDB.getForm(selectedFormId);
+                if (form) fields = form.fields || [];
+            } else {
+                const forms = DocmoDB.getForms();
+                const seen = new Set();
+                forms.forEach(f => (f.fields || []).forEach(fi => { if (!seen.has(fi.label)) { seen.add(fi.label); fields.push(fi); } }));
+            }
+            if (!fields.length) { document.getElementById('mappingArea').innerHTML = '<p style="font-size:13px;color:var(--text-muted)">No fields found</p>'; return; }
+            document.getElementById('mappingArea').innerHTML = fields.map(f => `
+        <div class="mapping-row">
+          <input class="input-field" value="${escAttr(f.label)}" readonly style="color:var(--text-muted);font-size:13px">
+          <span style="text-align:center;color:var(--text-muted)">→</span>
+          <input class="input-field" id="map_${f.id || f.label}" value="${escAttr(columnMappings[f.label] || f.label)}" style="font-size:13px" onchange="columnMappings['${escAttr(f.label)}']=this.value">
+        </div>`).join('');
+        }
+
+        function resetMapping() { columnMappings = {}; buildMapping(); }
+
+        // ── Real Exports ───────────────────────────────────────────────────────
+        function doExport(format) {
+            const r = getFilteredResponses();
+            if (!r.length) { showToast('⚠️ No responses to export', 'var(--amber)'); return; }
+
+            let formName = 'docmo_export';
+            if (selectedFormId) { const f = DocmoDB.getForm(selectedFormId); if (f) formName = f.title.replace(/[^a-z0-9]/gi, '_').toLowerCase(); }
+
+            try {
+                if (format === 'csv') exportCSV(r, formName);
+                else if (format === 'json') exportJSON(r, formName);
+                else if (format === 'xlsx') exportXLSX(r, formName);
+                else if (format === 'sql') exportSQL(r, formName);
+                else if (format === 'txt') exportTXT(r, formName);
+                else if (format === 'pdf') exportPDF(r, formName);
+
+                // Save history
+                saveHistory(format, r.length, formName);
+                loadHistory();
+                showToast(`✅ ${format.toUpperCase()} exported (${r.length} records)`, 'var(--emerald)');
+            } catch (e) {
+                showToast('❌ Export failed: ' + e.message, 'var(--rose)');
+                console.error(e);
+            }
+        }
+
+        function getColumns(responses) {
+            const keys = new Set();
+            responses.forEach(r => Object.keys(r.data || {}).forEach(k => keys.add(k)));
+            return [...keys];
+        }
+
+        function getColumnLabel(key) { return columnMappings[key] || key; }
+
+        function flattenResponse(resp, cols) {
+            const row = { 'Response ID': resp.id, 'Submitted At': new Date(resp.submittedAt).toLocaleString() };
+            cols.forEach(c => { row[getColumnLabel(c)] = resp.data?.[c] || ''; });
+            return row;
+        }
+
+        function exportCSV(responses, name) {
+            const cols = getColumns(responses);
+            const headers = ['Response ID', 'Submitted At', ...cols.map(getColumnLabel)];
+            const rows = responses.map(r => [r.id, new Date(r.submittedAt).toLocaleString(), ...cols.map(c => JSON.stringify(r.data?.[c] || ''))]);
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            dl(csv, name + '.csv', 'text/csv');
+        }
+
+        function exportJSON(responses, name) {
+            const cols = getColumns(responses);
+            const out = responses.map(r => flattenResponse(r, cols));
+            dl(JSON.stringify(out, null, 2), name + '.json', 'application/json');
+        }
+
+        function exportXLSX(responses, name) {
+            const cols = getColumns(responses);
+            const rows = responses.map(r => flattenResponse(r, cols));
+            const ws = XLSX.utils.json_to_sheet(rows);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Responses');
+            XLSX.writeFile(wb, name + '.xlsx');
+        }
+
+        function exportSQL(responses, name) {
+            const cols = getColumns(responses);
+            const tbl = name || 'responses';
+            const allCols = ['response_id', 'submitted_at', ...cols.map(c => c.replace(/[^a-z0-9]/gi, '_').toLowerCase())];
+            let sql = `-- Docmo SQL Export\n-- Generated: ${new Date().toISOString()}\n\nCREATE TABLE IF NOT EXISTS ${tbl} (\n  id SERIAL PRIMARY KEY,\n${allCols.map(c => `  ${c} TEXT`).join(',\n')}\n);\n\n`;
+            responses.forEach(r => {
+                const vals = [r.id, new Date(r.submittedAt).toISOString(), ...cols.map(c => r.data?.[c] || '')].map(v => `'${String(v).replace(/'/g, "''")}'`);
+                sql += `INSERT INTO ${tbl} (${allCols.join(', ')}) VALUES (${vals.join(', ')});\n`;
+            });
+            dl(sql, name + '.sql', 'text/plain');
+        }
+
+        function exportTXT(responses, name) {
+            let txt = `=== Docmo Export: ${name} ===\nGenerated: ${new Date().toLocaleString()}\nTotal Responses: ${responses.length}\n\n`;
+            responses.forEach((r, i) => {
+                txt += `--- Response #${i + 1} (${new Date(r.submittedAt).toLocaleString()}) ---\n`;
+                Object.entries(r.data || {}).forEach(([k, v]) => { txt += `${k}: ${v}\n`; });
+                txt += '\n';
+            });
+            dl(txt, name + '.txt', 'text/plain');
+        }
+
+        function exportPDF(responses, name) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.text('Docmo Export Report', 14, 20);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.text('Form: ' + name, 14, 28);
+            doc.text('Generated: ' + new Date().toLocaleString(), 14, 34);
+            doc.text('Total Responses: ' + responses.length, 14, 40);
+            let y = 50;
+            responses.slice(0, 20).forEach((r, i) => {
+                if (y > 260) { doc.addPage(); y = 20; }
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+                doc.text(`Response #${i + 1} — ${new Date(r.submittedAt).toLocaleDateString()}`, 14, y); y += 6;
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+                Object.entries(r.data || {}).forEach(([k, v]) => {
+                    if (y > 270) { doc.addPage(); y = 20; }
+                    const line = `${k}: ${String(v).slice(0, 80)}`;
+                    doc.text(line, 18, y); y += 5;
+                });
+                y += 4;
+            });
+            doc.save(name + '.pdf');
+        }
+
+        function dl(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }
+
+        // ── History ────────────────────────────────────────────────────────────
+        function saveHistory(format, count, name) {
+            let hist = JSON.parse(localStorage.getItem('docmo_export_history') || '[]');
+            hist.unshift({ format, count, name, date: new Date().toISOString() });
+            hist = hist.slice(0, 10);
+            localStorage.setItem('docmo_export_history', JSON.stringify(hist));
+        }
+
+        function loadHistory() {
+            const hist = JSON.parse(localStorage.getItem('docmo_export_history') || '[]');
+            const area = document.getElementById('historyArea');
+            if (!hist.length) { area.innerHTML = '<p style="font-size:13px;color:var(--text-muted);padding:12px 0">No exports yet</p>'; return; }
+            area.innerHTML = hist.map(h => `
+        <div class="hist-row">
+          <span class="badge badge-accent" style="width:44px;text-align:center">${h.format}</span>
+          <span style="flex:1;font-weight:600;font-size:13px">${escHtml(h.name)}</span>
+          <span style="font-size:12px;color:var(--text-muted)">${h.count} records</span>
+          <span style="font-size:12px;color:var(--text-muted)">${DocmoDB._relTime(h.date)}</span>
+        </div>`).join('');
+        }
+
+        function clearHistory() { localStorage.removeItem('docmo_export_history'); loadHistory(); }
+
+        function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function escAttr(s) { return String(s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+        function showToast(msg, color = 'var(--accent)') {
+            document.querySelectorAll('.toast').forEach(x => x.remove());
+            const t = document.createElement('div'); t.className = 'toast'; t.style.background = color; t.textContent = msg; document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 2500); setTimeout(() => t.remove(), 3000);
+        }
+        // Update count when dates change
+        document.addEventListener('change', e => { if (['dateFrom', 'dateTo'].includes(e.target.id)) updateCount(); });
+    </script>
+</body>
+
+</html>

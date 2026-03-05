@@ -1,0 +1,225 @@
+[
+  {
+    "id": "tpl_1",
+    "title": "Customer Feedback",
+    "description": "Collect customer reviews and satisfaction ratings",
+    "icon": "⭐",
+    "category": "Business",
+    "fields": [
+      {
+        "id": "t1",
+        "type": "text",
+        "label": "Name",
+        "required": true,
+        "placeholder": "Your name"
+      },
+      {
+        "id": "t2",
+        "type": "email",
+        "label": "Email",
+        "required": true
+      },
+      {
+        "id": "t3",
+        "type": "rating",
+        "label": "Overall experience",
+        "required": true
+      },
+      {
+        "id": "t4",
+        "type": "paragraph",
+        "label": "Feedback",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "tpl_2",
+    "title": "Job Application",
+    "description": "Professional job application with experience fields",
+    "icon": "💼",
+    "category": "HR",
+    "fields": [
+      {
+        "id": "t1",
+        "type": "text",
+        "label": "Full Name",
+        "required": true
+      },
+      {
+        "id": "t2",
+        "type": "email",
+        "label": "Email",
+        "required": true
+      },
+      {
+        "id": "t3",
+        "type": "phone",
+        "label": "Phone",
+        "required": false
+      },
+      {
+        "id": "t4",
+        "type": "dropdown",
+        "label": "Position Applied For",
+        "required": true,
+        "options": [
+          "Software Engineer",
+          "Designer",
+          "Product Manager",
+          "Marketing"
+        ]
+      },
+      {
+        "id": "t5",
+        "type": "paragraph",
+        "label": "Cover Letter",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "tpl_3",
+    "title": "Event Registration",
+    "description": "Collect registrations for events and conferences",
+    "icon": "📅",
+    "category": "Events",
+    "fields": [
+      {
+        "id": "t1",
+        "type": "text",
+        "label": "Full Name",
+        "required": true
+      },
+      {
+        "id": "t2",
+        "type": "email",
+        "label": "Email",
+        "required": true
+      },
+      {
+        "id": "t3",
+        "type": "radio",
+        "label": "Ticket Type",
+        "required": true,
+        "options": [
+          "Standard",
+          "VIP",
+          "Online Only"
+        ]
+      },
+      {
+        "id": "t4",
+        "type": "number",
+        "label": "Number of attendees",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "tpl_4",
+    "title": "Contact Form",
+    "description": "Simple contact enquiry form for your website",
+    "icon": "✉️",
+    "category": "General",
+    "fields": [
+      {
+        "id": "t1",
+        "type": "text",
+        "label": "Name",
+        "required": true
+      },
+      {
+        "id": "t2",
+        "type": "email",
+        "label": "Email",
+        "required": true
+      },
+      {
+        "id": "t3",
+        "type": "text",
+        "label": "Subject",
+        "required": true
+      },
+      {
+        "id": "t4",
+        "type": "paragraph",
+        "label": "Message",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "tpl_5",
+    "title": "Product Survey",
+    "description": "Collect product feedback and NPS scores",
+    "icon": "📊",
+    "category": "Business",
+    "fields": [
+      {
+        "id": "t1",
+        "type": "rating",
+        "label": "Product rating",
+        "required": true
+      },
+      {
+        "id": "t2",
+        "type": "radio",
+        "label": "Would you recommend?",
+        "required": true,
+        "options": [
+          "Definitely yes",
+          "Probably yes",
+          "Probably not",
+          "Definitely not"
+        ]
+      },
+      {
+        "id": "t3",
+        "type": "paragraph",
+        "label": "What can we improve?",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "tpl_6",
+    "title": "Support Ticket",
+    "description": "Allow users to submit support requests",
+    "icon": "🎫",
+    "category": "Support",
+    "fields": [
+      {
+        "id": "t1",
+        "type": "text",
+        "label": "Name",
+        "required": true
+      },
+      {
+        "id": "t2",
+        "type": "email",
+        "label": "Email",
+        "required": true
+      },
+      {
+        "id": "t3",
+        "type": "dropdown",
+        "label": "Issue Category",
+        "required": true,
+        "options": [
+          "Billing",
+          "Technical",
+          "Account",
+          "Feature Request",
+          "Other"
+        ]
+      },
+      {
+        "id": "t4",
+        "type": "paragraph",
+        "label": "Describe your issue",
+        "required": true
+      }
+    ]
+  }
+]

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard – SnapyForm</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="/js/api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-body {
+            background: var(--bg);
+            min-height: 100vh
+        }
+
+        .user-table-row {
+            display: grid;
+            grid-template-columns: 3fr 1fr 80px 80px 100px 100px;
+            gap: 12px;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            font-size: 13px;
+            transition: var(--transition)
+        }
+
+        .user-table-row:hover {
+            background: var(--surface-2)
+        }
+
+        .form-table-row {
+            display: grid;
+            grid-template-columns: 3fr 2fr 80px 100px 100px;
+            gap: 12px;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            font-size: 13px;
+            transition: var(--transition)
+        }
+
+        .form-table-row:hover {
+            background: var(--surface-2)
+        }
+
+        .mini-log {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            align-items: flex-start
+        }
+
+        .mini-log:last-child {
+            border-bottom: none
+        }
+
+        .log-type-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            text-transform: uppercase
+        }
+    </style>
+</head>
+
+<body class="admin-body">
+    <!-- ADMIN TOP NAV -->
+    <div class="admin-topbar">
+        <a href="/" class="flex items-center gap-8" style="text-decoration:none">
+            <div class="logo-mark">S</div><span class="logo-text">SnapyForm</span>
+        </a>
+        <span class="admin-badge">Admin</span>
+        <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+        <div class="admin-nav-item active" onclick="showTab('overview',this)">Overview</div>
+        <div class="admin-nav-item" onclick="showTab('users',this)">Users</div>
+        <div class="admin-nav-item" onclick="showTab('forms',this)">All Forms</div>
+        <div class="admin-nav-item" onclick="showTab('responses',this)">Responses</div>
+        <div class="admin-nav-item" onclick="showTab('activity',this)">Activity Log</div>
+        <div class="spacer"></div>
+        <div style="font-size:12.5px;color:var(--text-3)" id="adminName">Admin</div>
+        <button class="btn btn-ghost btn-sm" onclick="window.location='/dashboard'">← User Dashboard</button>
+        <button class="btn btn-ghost btn-sm" onclick="DocmoAPI.logout()">Logout</button>
+    </div>
+
+    <div class="admin-shell">
+
+        <!-- OVERVIEW TAB -->
+        <div id="tab-overview" class="tab-content active animate-fadeIn">
+            <div style="font-size:16px;font-weight:700;margin-bottom:20px">Platform Overview</div>
+            <div class="stats-row" id="adminStats" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+                <div class="card stat-card">
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-value" id="stUsers">—</div>
+                    <div class="stat-change" id="stUsersCh"></div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-label">Total Forms</div>
+                    <div class="stat-value" id="stForms">—</div>
+                    <div class="stat-change" id="stFormsCh"></div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-label">Total Responses</div>
+                    <div class="stat-value" id="stResp">—</div>
+                    <div class="stat-change" id="stRespCh"></div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-label">Blocked Users</div>
+                    <div class="stat-value" id="stBlocked">—</div>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Plan Distribution</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-wrap-200"><canvas id="planChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Quick Stats</div>
+                    </div>
+                    <div class="card-body" id="quickStats">
+                        <div style="color:var(--text-4);font-size:13px">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Recent Activity</div><button class="btn btn-ghost btn-sm"
+                        onclick="showTab('activity',document.querySelector('.admin-nav-item:nth-child(6)'))">View
+                        All</button>
+                </div>
+                <div class="card-body" id="recentActivity">
+                    <div style="color:var(--text-4);font-size:13px">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- USERS TAB -->
+        <div id="tab-users" class="tab-content animate-fadeIn" style="display:none">
+            <div class="flex items-center gap-12 mb-16">
+                <div style="font-size:16px;font-weight:700">Users <span class="badge badge-gray" id="usersCnt">0</span>
+                </div>
+                <div class="spacer"></div>
+                <div class="search-input"><span class="search-icon">⌕</span><input id="userSearch"
+                        placeholder="Search users..." oninput="renderUsers()" style="width:200px"></div>
+            </div>
+            <div class="card">
+                <div class="user-table-row" style="cursor:default">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">User</div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Plan</div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Forms</div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Responses
+                    </div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Status
+                    </div>
+                    <div></div>
+                </div>
+                <div id="usersTable">
+                    <div style="text-align:center;padding:40px;color:var(--text-4)">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORMS TAB -->
+        <div id="tab-forms" class="tab-content animate-fadeIn" style="display:none">
+            <div class="flex items-center gap-12 mb-16">
+                <div style="font-size:16px;font-weight:700">All Forms <span class="badge badge-gray"
+                        id="formsCnt">0</span></div>
+                <div class="spacer"></div>
+                <div class="search-input"><span class="search-icon">⌕</span><input id="formSearch"
+                        placeholder="Search forms..." oninput="renderForms()" style="width:200px"></div>
+            </div>
+            <div class="card">
+                <div class="form-table-row" style="cursor:default">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Form</div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Owner</div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Responses
+                    </div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Status
+                    </div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Created
+                    </div>
+                </div>
+                <div id="formsTable">
+                    <div style="text-align:center;padding:40px;color:var(--text-4)">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESPONSES TAB -->
+        <div id="tab-responses" class="tab-content animate-fadeIn" style="display:none">
+            <div class="flex items-center gap-12 mb-16">
+                <div style="font-size:16px;font-weight:700">All Responses <span class="badge badge-gray"
+                        id="respCnt">0</span></div>
+            </div>
+            <div class="card">
+                <div
+                    style="display:grid;grid-template-columns:40px 2fr 2fr 120px;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">#</div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Form</div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Preview
+                    </div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Submitted
+                    </div>
+                </div>
+                <div id="respTable">
+                    <div style="text-align:center;padding:40px;color:var(--text-4)">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIVITY TAB -->
+        <div id="tab-activity" class="tab-content animate-fadeIn" style="display:none">
+            <div class="flex items-center gap-12 mb-16">
+                <div style="font-size:16px;font-weight:700">Activity Log</div>
+                <div class="spacer"></div>
+                <button class="btn btn-secondary btn-sm" onclick="loadActivity()">Refresh</button>
+            </div>
+            <div class="card">
+                <div class="card-body" id="activityList">
+                    <div style="text-align:center;padding:40px;color:var(--text-4)">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let adminData = { users: [], forms: [], responses: [], activity: [], stats: null };
+
+        const ACTION_CFG = {
+            user_register: { label: 'Register', cls: 'badge-accent', color: 'var(--accent)' },
+            user_login: { label: 'Login', cls: 'badge-gray', color: 'var(--text-4)' },
+            form_created: { label: 'Form Created', cls: 'badge-green', color: 'var(--green)' },
+            form_deleted: { label: 'Form Deleted', cls: 'badge-red', color: 'var(--red)' },
+            response_submitted: { label: 'Response', cls: 'badge-blue', color: 'var(--blue)' },
+            export: { label: 'Export', cls: 'badge-yellow', color: 'var(--yellow)' },
+            ai_generate: { label: 'AI Generate', cls: 'badge-accent', color: 'var(--accent-h)' },
+            admin_user_update: { label: 'Admin Action', cls: 'badge-red', color: 'var(--red)' },
+            admin_user_delete: { label: 'User Deleted', cls: 'badge-red', color: 'var(--red)' },
+        };
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!DocmoAPI.requireAuth()) return;
+            const me = await DocmoAPI.getMe();
+            if (!me?.isAdmin) { toast('Admin access required', 'error'); setTimeout(() => window.location = '/dashboard', 1500); return; }
+            document.getElementById('adminName').textContent = me.name || 'Admin';
+            await loadAll();
+        });
+
+        async function loadAll() {
+            try {
+                const [stats, users, forms, responses, activity] = await Promise.all([
+                    DocmoAPI.admin.getStats(), DocmoAPI.admin.getUsers(),
+                    DocmoAPI.admin.getForms(), DocmoAPI.admin.getResponses(),
+                    DocmoAPI.admin.getActivity(100)
+                ]);
+                adminData = { stats, users, forms, responses, activity };
+                renderOverview(); renderUsers(); renderForms(); renderResp(); renderActivity();
+            } catch (e) { toast('Error loading admin data: ' + e.message, 'error'); }
+        }
+
+        function renderOverview() {
+            const s = adminData.stats; if (!s) return; document.getElementById('stUsers').textContent = s.totalUsers; document.getElementById('stForms').textContent = s.totalForms; document.getElementById('stResp').textContent = s.totalResponses; document.getElementById('stBlocked').textContent = s.blockedUsers; document.getElementById('stFormsCh').textContent = '+' + s.formsToday + ' today'; document.getElementById('stFormsCh').className = 'stat-change' + (s.formsToday > 0 ? ' up' : ''); document.getElementById('stRespCh').textContent = '+' + s.responsesToday + ' today'; document.getElementById('stRespCh').className = 'stat-change' + (s.responsesToday > 0 ? ' up' : '');
+            const qs = `<div style="display:flex;flex-direction:column;gap:8px"><div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Active Users</span><span style="font-weight:600">${s.activeUsers}</span></div><div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Activity Today</span><span style="font-weight:600">${s.activityToday}</span></div><div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Free Users</span><span style="font-weight:600">${s.planBreakdown?.free || 0}</span></div><div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Pro Users</span><span style="font-weight:600">${s.planBreakdown?.pro || 0}</span></div><div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Enterprise</span><span style="font-weight:600">${s.planBreakdown?.enterprise || 0}</span></div></div>`;
+            document.getElementById('quickStats').innerHTML = qs;
+            new Chart(document.getElementById('planChart'), { type: 'doughnut', data: { labels: ['Free', 'Pro', 'Enterprise'], datasets: [{ data: [s.planBreakdown?.free || 0, s.planBreakdown?.pro || 0, s.planBreakdown?.enterprise || 0], backgroundColor: ['#3f3f46', '#6366f1', '#22c55e'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#a1a1aa', font: { size: 11 } } } } } });
+            document.getElementById('recentActivity').innerHTML = renderActivityItems(adminData.activity.slice(0, 8));
+        }
+
+        function renderUsers() { const q = (document.getElementById('userSearch')?.value || '').toLowerCase(); let u = adminData.users.filter(x => !q || x.name?.toLowerCase().includes(q) || x.email?.toLowerCase().includes(q)); document.getElementById('usersCnt').textContent = u.length; document.getElementById('usersTable').innerHTML = u.map(user => `<div class="user-table-row"><div class="flex items-center gap-10"><div class="user-avatar" style="width:28px;height:28px;font-size:11px">${user.avatar || '?'}</div><div><div style="font-size:13px;font-weight:500">${DocmoAPI.escH(user.name || '')}</div><div style="font-size:11.5px;color:var(--text-3)">${DocmoAPI.escH(user.email || '')}</div></div>${user.isAdmin ? '<span class="admin-badge" style="margin-left:4px">Admin</span>' : ''}</div><div><span class="badge badge-gray">${user.plan || 'Free'}</span></div><div style="font-size:13px">${user.formCount || 0}</div><div style="font-size:13px">${user.responseCount || 0}</div><div>${user.isBlocked ? '<span class="badge badge-red">Blocked</span>' : '<span class="badge badge-green">Active</span>'}</div><div class="flex gap-4"><button class="btn btn-secondary btn-sm" onclick="toggleBlock('${user.id}',${!user.isBlocked})">${user.isBlocked ? 'Unblock' : 'Block'}</button><select class="input" style="font-size:11px;padding:3px 6px;width:auto" onchange="changePlan('${user.id}',this.value)"><option ${user.plan === 'Free' ? 'selected' : ''}>Free</option><option ${user.plan === 'Pro' ? 'selected' : ''}>Pro</option><option ${user.plan === 'Enterprise' ? 'selected' : ''}>Enterprise</option></select>${!user.isAdmin ? `<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteUser('${user.id}','${DocmoAPI.escA(user.name || '')}')">✕</button>` : ''}</div></div>`).join('') || '<div style="text-align:center;padding:32px;color:var(--text-4)">No users found</div>'; }
+        function renderForms() { const q = (document.getElementById('formSearch')?.value || '').toLowerCase(); let f = adminData.forms.filter(x => !q || x.title?.toLowerCase().includes(q) || x.ownerName?.toLowerCase().includes(q)); document.getElementById('formsCnt').textContent = f.length; const sc = { active: { cls: 'badge-green', l: 'Active' }, draft: { cls: 'badge-yellow', l: 'Draft' }, closed: { cls: 'badge-gray', l: 'Closed' } }; document.getElementById('formsTable').innerHTML = f.map(form => `<div class="form-table-row"><div><div style="font-size:13px;font-weight:500">${DocmoAPI.escH(form.title)}</div><div style="font-size:11.5px;color:var(--text-3)">${DocmoAPI.escH(form.description || '')}</div></div><div style="font-size:12.5px;color:var(--text-2)">${DocmoAPI.escH(form.ownerName || '')}<div style="font-size:11px;color:var(--text-4)">${DocmoAPI.escH(form.ownerEmail || '')}</div></div><div style="font-size:13px;font-weight:500">${form.responseCount || 0}</div><div><span class="badge ${(sc[form.status] || sc.draft).cls}">${(sc[form.status] || sc.draft).l}</span></div><div style="font-size:12px;color:var(--text-3)">${DocmoAPI.relTime(form.createdAt)}</div></div>`).join('') || '<div style="text-align:center;padding:32px;color:var(--text-4)">No forms found</div>'; }
+        function renderResp() { const r = adminData.responses; document.getElementById('respCnt').textContent = r.length; document.getElementById('respTable').innerHTML = r.map((resp, i) => `<div style="display:grid;grid-template-columns:40px 2fr 2fr 120px;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:12.5px"><div style="color:var(--text-4)">${i + 1}</div><div style="font-weight:500">${DocmoAPI.escH(resp.formTitle || '—')}</div><div style="color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${DocmoAPI.escH(Object.values(resp.data || {}).join(' · ').slice(0, 60))}</div><div style="color:var(--text-3)">${DocmoAPI.relTime(resp.submittedAt)}</div></div>`).join('') || '<div style="text-align:center;padding:32px;color:var(--text-4)">No responses</div>'; }
+
+        function renderActivityItems(items) { return items.map(l => { const cfg = ACTION_CFG[l.action] || { label: l.action, cls: 'badge-gray', color: 'var(--text-4)' }; return `<div class="mini-log"><div style="font-size:8px;padding:3px 7px;border-radius:4px;font-weight:700;text-transform:uppercase;background:rgba(255,255,255,0.06);color:${cfg.color};white-space:nowrap;flex-shrink:0">${cfg.label}</div><div style="flex:1"><div style="font-size:13px;color:var(--text-2)"><strong style="color:var(--text)">${DocmoAPI.escH(l.userName || 'Unknown')}</strong> ${actionDesc(l)}</div></div><div style="font-size:11px;color:var(--text-4);white-space:nowrap;margin-left:8px">${DocmoAPI.relTime(l.timestamp)}</div></div>`; }).join('') || '<div style="text-align:center;padding:20px;color:var(--text-4)">No activity</div>'; }
+
+        function actionDesc(l) { const a = l.action; if (a === 'user_register') return 'created an account'; if (a === 'user_login') return 'logged in'; if (a === 'form_created') return `created form "${DocmoAPI.escH(l.meta?.title || '')}"`; if (a === 'form_deleted') return `deleted form "${DocmoAPI.escH(l.meta?.title || '')}"`; if (a === 'response_submitted') return `submitted a response`; if (a === 'export') return `exported data as ${l.meta?.format || ''}`; if (a === 'ai_generate') return `generated a form with AI`; if (a === 'admin_user_update') return `updated user settings`; if (a === 'admin_user_delete') return `deleted user account`; return a.replace(/_/g, ' '); }
+        function renderActivity() { document.getElementById('activityList').innerHTML = renderActivityItems(adminData.activity); }
+
+        async function toggleBlock(id, block) { try { await DocmoAPI.admin.updateUser(id, { isBlocked: block }); await loadAll(); toast(block ? 'User blocked' : 'User unblocked', 'success'); } catch (e) { toast(e.message, 'error'); } }
+        async function changePlan(id, plan) { try { await DocmoAPI.admin.updateUser(id, { plan }); await loadAll(); toast('Plan updated to ' + plan, 'success'); } catch (e) { toast(e.message, 'error'); } }
+        async function deleteUser(id, name) { if (!confirm(`Permanently delete user "${name}" and all their forms and responses?`)) return; try { await DocmoAPI.admin.deleteUser(id); await loadAll(); toast('User deleted', 'success'); } catch (e) { toast(e.message, 'error'); } }
+
+        function showTab(id, el) { document.querySelectorAll('.admin-nav-item').forEach(x => x.classList.remove('active')); el.classList.add('active'); document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none'); const t = document.getElementById('tab-' + id); if (t) { t.style.display = 'block'; t.classList.add('animate-fadeIn'); } if (id === 'activity') loadActivity(); }
+        async function loadActivity() { try { const a = await DocmoAPI.admin.getActivity(200); adminData.activity = a; renderActivity(); } catch (e) { toast(e.message, 'error'); } }
+    </script>
+</body>
+
+</html>

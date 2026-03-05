@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docmo – Smart Document & Form Creation Platform</title>
+  <meta name="description" content="Create smart forms and documents, share via links, collect responses and export data to Excel, CSV, JSON or PDF. Try Docmo free.">
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    /* Landing-specific */
+    body { padding-top: 64px; }
+    .hero { min-height: calc(100vh - 64px); display: flex; align-items: center; position: relative; overflow: hidden; background: var(--bg-primary); }
+    .hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(108,99,255,0.12) 0%, transparent 70%); }
+    .hero-grid { position: absolute; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; }
+    .hero-content { position: relative; text-align: center; max-width: 800px; margin: 0 auto; padding: 80px 24px; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-soft); border: 1px solid rgba(108,99,255,0.3); padding: 6px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 24px; }
+    .hero-title { font-size: clamp(40px, 6vw, 72px); font-weight: 900; line-height: 1.1; margin-bottom: 20px; }
+    .hero-subtitle { font-size: 18px; color: var(--text-secondary); max-width: 560px; margin: 0 auto 36px; line-height: 1.7; }
+    .hero-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 48px; }
+    .hero-stats { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
+    .hero-stat strong { display: block; font-size: 28px; font-weight: 900; }
+    .hero-stat span { font-size: 13px; color: var(--text-muted); }
+
+    .hero-mockup { position: relative; max-width: 900px; margin: -20px auto 0; padding: 0 24px; }
+    .mockup-browser { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-lg), 0 0 80px rgba(108,99,255,0.2); }
+    .mockup-bar { background: var(--bg-secondary); padding: 12px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+    .mockup-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .mockup-url { flex: 1; background: var(--bg-primary); border-radius: 6px; padding: 4px 12px; font-size: 12px; color: var(--text-muted); margin: 0 12px; }
+    .mockup-content { padding: 24px; display: grid; grid-template-columns: 200px 1fr 220px; gap: 16px; min-height: 320px; }
+    .mockup-panel { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 14px; }
+    .mockup-panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 10px; }
+    .mockup-field-chip { background: var(--bg-hover); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; cursor: grab; }
+    .mockup-canvas-field { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+    .mockup-canvas-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .mockup-canvas-input { height: 28px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; }
+
+    /* Features */
+    .features { padding: 100px 0; background: var(--bg-secondary); }
+    .section-tag { display: inline-block; background: var(--accent-soft); color: var(--accent); padding: 4px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+    .section-heading { font-size: clamp(28px, 4vw, 44px); font-weight: 900; margin-bottom: 14px; }
+    .section-subheading { font-size: 16px; color: var(--text-secondary); max-width: 540px; line-height: 1.7; }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 56px; }
+    .feature-card { padding: 28px; transition: var(--transition); }
+    .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--accent); }
+    .feature-icon-box { width: 52px; height: 52px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; }
+    .feature-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .feature-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* How it works */
+    .how-it-works { padding: 100px 0; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 56px; }
+    .step { text-align: center; padding: 32px 24px; }
+    .step-num { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #8b5cf6); color: white; font-size: 22px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 8px 24px var(--accent-glow); }
+    .step-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .step-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* Templates */
+    .templates { padding: 100px 0; background: var(--bg-secondary); }
+    .templates-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-top: 48px; }
+    .template-card { padding: 20px; text-align: center; cursor: pointer; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-card); transition: var(--transition); }
+    .template-card:hover { transform: translateY(-4px); border-color: var(--accent); background: var(--accent-soft); }
+    .template-emoji { font-size: 32px; margin-bottom: 10px; }
+    .template-name { font-size: 13px; font-weight: 700; }
+
+    /* Pricing */
+    .pricing { padding: 100px 0; }
+    .pricing-cards { display: flex; gap: 24px; margin-top: 56px; align-items: stretch; }
+
+    /* CTA Section */
+    .cta-section { padding: 120px 0; background: var(--bg-secondary); text-align: center; position: relative; overflow: hidden; }
+    .cta-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 400px; background: radial-gradient(ellipse at center, rgba(108,99,255,0.2), transparent 70%); }
+    .cta-title { font-size: clamp(32px, 4vw, 52px); font-weight: 900; margin-bottom: 16px; }
+    .cta-sub { font-size: 17px; color: var(--text-secondary); margin-bottom: 36px; }
+
+    /* Footer */
+    .footer { background: var(--bg-primary); border-top: 1px solid var(--border); padding: 56px 0 32px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 32px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--text-muted); margin-top: 12px; max-width: 240px; line-height: 1.7; }
+    .footer-col-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .footer-links li a { font-size: 13px; color: var(--text-muted); transition: var(--transition); }
+    .footer-links li a:hover { color: var(--accent); }
+    .footer-bottom { display: flex; align-items: center; justify-content: space-between; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="navbar-logo">
+      <div class="logo-icon">📋</div>
+      <span>Docmo</span>
+    </a>
+    <div class="navbar-links">
+      <a href="#features">Features</a>
+      <a href="#templates">Templates</a>
+      <a href="#pricing">Pricing</a>
+      <a href="docs/architecture.md">Docs</a>
+    </div>
+    <div class="navbar-actions">
+      <button class="btn btn-ghost btn-sm" onclick="toggleTheme()">🌙 Dark</button>
+      <a href="login.html" class="btn btn-secondary btn-sm">Sign In</a>
+      <a href="register.html" class="btn btn-primary btn-sm">Get Started Free</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="container" style="width:100%">
+      <div class="hero-content animate-fadeInUp">
+        <div class="hero-badge">🚀 Now with AI Form Generator</div>
+        <h1 class="hero-title">Create Smart <span class="text-gradient">Forms & Documents</span> in Minutes</h1>
+        <p class="hero-subtitle">Share links, collect responses from anyone, and export your data to Excel, CSV, JSON, or PDF — all in one beautiful platform.</p>
+        <div class="hero-actions">
+          <a href="register.html" class="btn btn-primary btn-lg">✨ Get Started Free</a>
+          <a href="dashboard.html" class="btn btn-secondary btn-lg">🎯 View Demo</a>
+        </div>
+        <div class="hero-stats stagger">
+          <div class="hero-stat"><strong class="text-gradient">50K+</strong><span>Forms Created</span></div>
+          <div class="hero-stat"><strong class="text-gradient">2M+</strong><span>Responses Collected</span></div>
+          <div class="hero-stat"><strong class="text-gradient">6</strong><span>Export Formats</span></div>
+          <div class="hero-stat"><strong class="text-gradient">99.9%</strong><span>Uptime</span></div>
+        </div>
+      </div>
+
+      <!-- MOCKUP -->
+      <div class="hero-mockup animate-fadeInUp" style="animation-delay:0.2s">
+        <div class="mockup-browser">
+          <div class="mockup-bar">
+            <div class="mockup-dot" style="background:#ff5f57"></div>
+            <div class="mockup-dot" style="background:#febc2e"></div>
+            <div class="mockup-dot" style="background:#28c840"></div>
+            <div class="mockup-url">docmo.app/builder/customer-feedback</div>
+          </div>
+          <div class="mockup-content">
+            <!-- Left Panel -->
+            <div class="mockup-panel">
+              <div class="mockup-panel-title">Field Types</div>
+              <div class="mockup-field-chip">📝 Text Input</div>
+              <div class="mockup-field-chip">📧 Email</div>
+              <div class="mockup-field-chip">📞 Phone</div>
+              <div class="mockup-field-chip">⭐ Rating</div>
+              <div class="mockup-field-chip">📋 Dropdown</div>
+              <div class="mockup-field-chip">☑️ Checkbox</div>
+              <div class="mockup-field-chip">📅 Date</div>
+              <div class="mockup-field-chip">📎 File Upload</div>
+            </div>
+            <!-- Canvas -->
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="font-size:18px;font-weight:800;margin-bottom:4px">Customer Feedback Survey</div>
+              <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Help us improve your experience</div>
+              <div class="mockup-canvas-field">
+                <div class="mockup-canvas-title">Full Name <span style="color:var(--rose);font-size:10px">*required</span></div>
+                <div class="mockup-canvas-input"></div>
+              </div>
+              <div class="mockup-canvas-field">
+                <div class="mockup-canvas-title">Email Address <span style="color:var(--rose);font-size:10px">*required</span></div>
+                <div class="mockup-canvas-input"></div>
+              </div>
+              <div class="mockup-canvas-field" style="border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)">
+                <div class="mockup-canvas-title">Rate your experience ⭐</div>
+                <div style="display:flex;gap:6px;margin-top:6px">
+                  <span style="color:var(--amber)">★</span><span style="color:var(--amber)">★</span><span style="color:var(--amber)">★</span><span style="color:var(--amber)">★</span><span style="color:var(--border)">★</span>
+                </div>
+              </div>
+              <div class="drop-zone" style="padding:14px;font-size:12px">+ Drop a field here</div>
+            </div>
+            <!-- Right Panel -->
+            <div class="mockup-panel">
+              <div class="mockup-panel-title">Properties</div>
+              <div style="font-size:11px;margin-bottom:10px">
+                <div style="color:var(--text-muted);margin-bottom:4px">Label</div>
+                <input style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--text-primary);width:100%" value="Rate your experience">
+              </div>
+              <div class="toggle" style="margin-bottom:10px">
+                <div class="toggle-switch on"></div>
+                <span style="font-size:11px;color:var(--text-secondary)">Required</span>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Max Stars</div>
+              <select style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--text-primary);width:100%"><option>5 Stars</option></select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="container">
+      <div style="text-align:center">
+        <div class="section-tag">Features</div>
+        <h2 class="section-heading">Everything you need to <span class="text-gradient">collect data</span></h2>
+        <p class="section-subheading" style="margin:0 auto">From simple contact forms to complex multi-step surveys, Docmo handles it all.</p>
+      </div>
+      <div class="features-grid stagger">
+        <div class="card feature-card card-glow">
+          <div class="feature-icon-box" style="background:var(--accent-soft)">🎨</div>
+          <div class="feature-title">Drag & Drop Builder</div>
+          <p class="feature-desc">Visually build forms with our intuitive drag-and-drop interface. 15+ field types, conditional logic, and multi-step forms.</p>
+        </div>
+        <div class="card feature-card card-glow">
+          <div class="feature-icon-box" style="background:var(--emerald-soft)">🔗</div>
+          <div class="feature-title">Shareable Links & QR Codes</div>
+          <p class="feature-desc">Share your form via a unique link or QR code. No login required for respondents. Works on any device.</p>
+        </div>
+        <div class="card feature-card card-glow">
+          <div class="feature-icon-box" style="background:var(--amber-soft)">📊</div>
+          <div class="feature-title">Response Analytics</div>
+          <p class="feature-desc">Real-time dashboards with pie charts, bar graphs, response timelines, and field-level statistics.</p>
+        </div>
+        <div class="card feature-card card-glow">
+          <div class="feature-icon-box" style="background:var(--sky-soft)">📥</div>
+          <div class="feature-title">6 Export Formats</div>
+          <p class="feature-desc">Export your data to Excel, CSV, JSON, SQL dump, PDF report, or sync directly to Google Sheets.</p>
+        </div>
+        <div class="card feature-card card-glow">
+          <div class="feature-icon-box" style="background:var(--accent-soft)">🤖</div>
+          <div class="feature-title">AI Form Generator</div>
+          <p class="feature-desc">Describe your form in plain English and AI auto-generates all fields, validation rules, and structure.</p>
+        </div>
+        <div class="card feature-card card-glow">
+          <div class="feature-icon-box" style="background:var(--emerald-soft)">👥</div>
+          <div class="feature-title">Team Collaboration</div>
+          <p class="feature-desc">Invite team members with Owner, Editor, or Viewer roles. Real-time collaborative editing.</p>
+        </div>
+        <div class="card feature-card card-glow">
+          <div class="feature-icon-box" style="background:var(--rose-soft)">🔔</div>
+          <div class="feature-title">Webhooks & Zapier</div>
+          <p class="feature-desc">Automatically send data to external apps. Connect with Zapier, Slack, Google Sheets and 3000+ apps.</p>
+        </div>
+        <div class="card feature-card card-glow">
+          <div class="feature-icon-box" style="background:var(--amber-soft)">🔀</div>
+          <div class="feature-title">Conditional Logic</div>
+          <p class="feature-desc">Show or hide fields based on previous answers. Create dynamic, personalized form experiences.</p>
+        </div>
+        <div class="card feature-card card-glow">
+          <div class="feature-icon-box" style="background:var(--sky-soft)">🔒</div>
+          <div class="feature-title">Enterprise Security</div>
+          <p class="feature-desc">JWT authentication, rate limiting, CSRF protection, encryption at rest and in transit.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works">
+    <div class="container">
+      <div style="text-align:center">
+        <div class="section-tag">How It Works</div>
+        <h2 class="section-heading">From idea to <span class="text-gradient">data in 3 steps</span></h2>
+      </div>
+      <div class="steps stagger">
+        <div class="card step">
+          <div class="step-num">1</div>
+          <h3 class="step-title">Create your form</h3>
+          <p class="step-desc">Use our drag-and-drop builder or let AI generate your form from a text description. Add any field type you need.</p>
+        </div>
+        <div class="card step">
+          <div class="step-num">2</div>
+          <h3 class="step-title">Share the link</h3>
+          <p class="step-desc">Get a unique shareable URL and QR code. Send it via email, WhatsApp, or embed anywhere. No login needed for respondents.</p>
+        </div>
+        <div class="card step">
+          <div class="step-num">3</div>
+          <h3 class="step-title">Export your data</h3>
+          <p class="step-desc">View real-time analytics, browse individual responses, and download your data in Excel, CSV, JSON, or PDF with one click.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEMPLATES -->
+  <section class="templates" id="templates">
+    <div class="container">
+      <div style="text-align:center">
+        <div class="section-tag">Templates</div>
+        <h2 class="section-heading">Start from a <span class="text-gradient">ready-made template</span></h2>
+      </div>
+      <div class="templates-grid stagger">
+        <div class="template-card"><div class="template-emoji">📋</div><div class="template-name">Job Application</div></div>
+        <div class="template-card"><div class="template-emoji">⭐</div><div class="template-name">Customer Feedback</div></div>
+        <div class="template-card"><div class="template-emoji">🎉</div><div class="template-name">Event Registration</div></div>
+        <div class="template-card"><div class="template-emoji">📊</div><div class="template-name">Survey</div></div>
+        <div class="template-card"><div class="template-emoji">📬</div><div class="template-name">Contact Form</div></div>
+        <div class="template-card"><div class="template-emoji">🏥</div><div class="template-name">Patient Intake</div></div>
+        <div class="template-card"><div class="template-emoji">🎓</div><div class="template-name">Student Enrollment</div></div>
+        <div class="template-card"><div class="template-emoji">💼</div><div class="template-name">Lead Generation</div></div>
+        <div class="template-card"><div class="template-emoji">🛒</div><div class="template-name">Order Form</div></div>
+        <div class="template-card"><div class="template-emoji">🔍</div><div class="template-name">Bug Report</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div style="text-align:center">
+        <div class="section-tag">Pricing</div>
+        <h2 class="section-heading">Simple, <span class="text-gradient">transparent pricing</span></h2>
+      </div>
+      <div class="pricing-cards">
+        <div class="card plan-card">
+          <div class="badge badge-green mb-8">Free</div>
+          <div class="plan-price"><sup>$</sup>0<span>/mo</span></div>
+          <p class="text-secondary text-sm">Perfect for getting started</p>
+          <ul class="plan-features">
+            <li>3 active forms</li>
+            <li>100 responses/month</li>
+            <li>CSV & JSON export</li>
+            <li>QR code sharing</li>
+            <li>Basic analytics</li>
+          </ul>
+          <a href="register.html" class="btn btn-secondary btn-full">Get Started Free</a>
+        </div>
+        <div class="card plan-card featured">
+          <div class="badge badge-accent mb-8">Pro</div>
+          <div class="plan-price"><sup>$</sup>19<span>/mo</span></div>
+          <p class="text-secondary text-sm">For growing teams</p>
+          <ul class="plan-features">
+            <li>Unlimited forms</li>
+            <li>10,000 responses/month</li>
+            <li>All 6 export formats</li>
+            <li>AI Form Generator</li>
+            <li>Conditional logic</li>
+            <li>Team collaboration</li>
+            <li>Webhooks & Zapier</li>
+          </ul>
+          <a href="register.html" class="btn btn-primary btn-full">Start Pro Trial</a>
+        </div>
+        <div class="card plan-card">
+          <div class="badge badge-sky mb-8">Enterprise</div>
+          <div class="plan-price"><sup>$</sup>79<span>/mo</span></div>
+          <p class="text-secondary text-sm">For large organizations</p>
+          <ul class="plan-features">
+            <li>Unlimited everything</li>
+            <li>Custom domain</li>
+            <li>SSO / SAML</li>
+            <li>Priority support</li>
+            <li>SLA guarantee</li>
+            <li>Custom integrations</li>
+            <li>Data residency options</li>
+          </ul>
+          <a href="#contact" class="btn btn-secondary btn-full">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-glow"></div>
+    <div class="container" style="position:relative">
+      <h2 class="cta-title">Ready to <span class="text-gradient">collect smarter data?</span></h2>
+      <p class="cta-sub">Join 50,000+ users already using Docmo to build forms and collect data.</p>
+      <div style="display:flex;justify-content:center;gap:12px">
+        <a href="register.html" class="btn btn-primary btn-lg">✨ Start For Free</a>
+        <a href="dashboard.html" class="btn btn-secondary btn-lg">View Live Demo →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="navbar-logo" style="margin-bottom:12px"><div class="logo-icon">📋</div><span>Docmo</span></div>
+          <p>Smart document and form creation platform. Build, share, collect, export.</p>
+        </div>
+        <div>
+          <div class="footer-col-title">Product</div>
+          <ul class="footer-links"><li><a href="#">Features</a></li><li><a href="#">Templates</a></li><li><a href="#">Integrations</a></li><li><a href="#">Pricing</a></li><li><a href="#">Changelog</a></li></ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Developers</div>
+          <ul class="footer-links"><li><a href="docs/architecture.md">API Docs</a></li><li><a href="#">Webhooks</a></li><li><a href="#">SDK</a></li><li><a href="#">Status</a></li></ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Company</div>
+          <ul class="footer-links"><li><a href="#">About</a></li><li><a href="#">Blog</a></li><li><a href="#">Careers</a></li><li><a href="#">Contact</a></li></ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Legal</div>
+          <ul class="footer-links"><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms of Service</a></li><li><a href="#">Cookie Policy</a></li><li><a href="#">GDPR</a></li></ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Docmo. All rights reserved.</span>
+        <span>Made with ❤️ for better data collection</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn = document.querySelector('.navbar-actions .btn-ghost');
+      if (html.getAttribute('data-theme') === 'dark') {
+        html.setAttribute('data-theme', 'light');
+        btn.textContent = '🌑 Light';
+      } else {
+        html.setAttribute('data-theme', 'dark');
+        btn.textContent = '🌙 Dark';
+      }
+    }
+  </script>
+</body>
+</html>

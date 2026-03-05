@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnapyForm – Smart Form Builder & Data Platform</title>
+  <meta name="description"
+    content="Create forms, collect responses, analyze data with AI. The professional form builder for modern teams.">
+  <link rel="stylesheet" href="/styles/main.css">
+  <script src="/js/api.js"></script>
+  <style>
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .nav-link {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text-2);
+      transition: var(--transition);
+    }
+
+    .nav-link:hover {
+      color: var(--text);
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .pricing-card {
+      padding: 24px;
+      text-align: center;
+    }
+
+    .pricing-plan {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-3);
+      margin-bottom: 8px;
+    }
+
+    .pricing-price {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+
+    .pricing-price span {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-3);
+    }
+
+    .pricing-list {
+      text-align: left;
+      margin: 20px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pricing-item {
+      display: flex;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-2);
+    }
+
+    .pricing-item::before {
+      content: '✓';
+      color: var(--green);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .pricing-featured {
+      border-color: var(--accent);
+      position: relative;
+    }
+
+    .pricing-featured::before {
+      content: 'Most Popular';
+      position: absolute;
+      top: -1px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-50%);
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 100px;
+    }
+
+    .how-step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 0 0 28px;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(99, 102, 241, .3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 32px;
+      padding: 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .footer-col-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .footer-link {
+      display: block;
+      font-size: 13px;
+      color: var(--text-3);
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+
+    .footer-link:hover {
+      color: var(--text-2);
+    }
+
+    @media(max-width:900px) {
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="landing-nav">
+    <a href="/" class="flex items-center gap-8" style="text-decoration:none">
+      <div class="logo-mark">S</div>
+      <span class="logo-text">SnapyForm</span>
+    </a>
+    <div class="nav-links" style="margin-left:32px">
+      <a href="/templates" class="nav-link">Templates</a>
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#pricing" class="nav-link">Pricing</a>
+      <a href="#" class="nav-link">Docs</a>
+    </div>
+    <div class="flex items-center gap-8" style="margin-left:auto">
+      <a href="/login" class="btn btn-ghost btn-sm">Sign In</a>
+      <a href="/register" class="btn btn-primary btn-sm">Get Started Free</a>
+    </div>
+  </nav>
+
+  <div class="landing-content">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-badge"><span class="dot"></span> Now with OpenAI-powered form generation</div>
+      <h1 class="hero-h1">Build forms.<br>Collect data.<br>Act on insights.</h1>
+      <p class="hero-sub">SnapyForm is the professional form builder for modern teams. Create any form in seconds,
+        collect responses, and analyze results with AI.</p>
+      <div class="hero-actions">
+        <a href="/register" class="btn btn-primary btn-xl">Start Building — It's Free</a>
+        <a href="/templates" class="btn btn-secondary btn-xl">Browse Templates</a>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features-section" id="features">
+      <div style="max-width:560px;margin:0 auto 48px;text-align:center">
+        <div class="section-label">Features</div>
+        <div class="section-title">Everything you need to collect data</div>
+        <div class="section-sub" style="margin:0 auto">From simple contact forms to complex multi-step surveys —
+          SnapyForm handles it all with elegance.</div>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">✦</div>
+          <div class="feature-title">AI Form Generation</div>
+          <div class="feature-desc">Describe any form in plain English. Our AI builds the full form with appropriate
+            fields instantly.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⬡</div>
+          <div class="feature-title">Drag &amp; Drop Builder</div>
+          <div class="feature-desc">12+ field types, conditional logic, multi-step forms. Build anything from a simple
+            contact form to complex surveys.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">◈</div>
+          <div class="feature-title">Real-Time Analytics</div>
+          <div class="feature-desc">Live dashboards with charts, response trends, field statistics, and AI-powered
+            insights.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⬇</div>
+          <div class="feature-title">Multi-Format Export</div>
+          <div class="feature-desc">Export to Excel, CSV, JSON, PDF, SQL with one click. Map fields to any database
+            schema.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">◎</div>
+          <div class="feature-title">QR Code Sharing</div>
+          <div class="feature-desc">Auto-generate QR codes for every form. Share via link, embed on websites, or print.
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⌘</div>
+          <div class="feature-title">Team Collaboration</div>
+          <div class="feature-desc">Invite teammates with Owner, Editor, Viewer, or Analyst roles. Build and analyze
+            together.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-title">Workflow Automation</div>
+          <div class="feature-desc">Trigger email notifications, webhooks, and integrations automatically on new
+            submissions.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">◐</div>
+          <div class="feature-title">Conditional Logic</div>
+          <div class="feature-desc">Show or hide fields based on previous answers. Create dynamic, personalized form
+            experiences.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚿</div>
+          <div class="feature-title">Secure &amp; Reliable</div>
+          <div class="feature-desc">JWT authentication, input validation, rate limiting, and encryption for sensitive
+            data.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section
+      style="padding:60px 48px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+      <div style="max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center">
+        <div>
+          <div class="section-label">How it works</div>
+          <div class="section-title" style="font-size:28px">From form to insight in minutes</div>
+          <div style="margin-top:28px">
+            <div class="how-step">
+              <div class="step-num">1</div>
+              <div>
+                <div style="font-weight:600;font-size:14px;margin-bottom:4px">Create your form</div>
+                <div style="font-size:13px;color:var(--text-3);line-height:1.6">Use drag-and-drop builder or let AI
+                  generate it from a description.</div>
+              </div>
+            </div>
+            <div class="how-step">
+              <div class="step-num">2</div>
+              <div>
+                <div style="font-weight:600;font-size:14px;margin-bottom:4px">Share via link or QR</div>
+                <div style="font-size:13px;color:var(--text-3);line-height:1.6">Share your public form link or QR code.
+                  No account needed for respondents.</div>
+              </div>
+            </div>
+            <div class="how-step">
+              <div class="step-num">3</div>
+              <div>
+                <div style="font-weight:600;font-size:14px;margin-bottom:4px">Collect responses</div>
+                <div style="font-size:13px;color:var(--text-3);line-height:1.6">All submissions stored securely in your
+                  dashboard with real-time updates.</div>
+              </div>
+            </div>
+            <div class="how-step">
+              <div class="step-num">4</div>
+              <div>
+                <div style="font-weight:600;font-size:14px;margin-bottom:4px">Analyze and export</div>
+                <div style="font-size:13px;color:var(--text-3);line-height:1.6">Get AI insights, view charts, and export
+                  data in any format you need.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--bg);border-radius:var(--radius-xl);padding:24px;border:1px solid var(--border)">
+          <div
+            style="font-size:12px;color:var(--text-3);margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;font-weight:600">
+            Live Example</div>
+          <div
+            style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px">
+            <div style="font-size:15px;font-weight:700;margin-bottom:4px">Customer Feedback Survey</div>
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:16px">2 responses today</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div
+                style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12.5px;color:var(--text-2)">
+                Full Name <span style="color:var(--red);font-size:10px">*</span></div>
+              <div
+                style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12.5px;color:var(--text-2)">
+                Email Address <span style="color:var(--red);font-size:10px">*</span></div>
+              <div
+                style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12.5px;color:var(--text-2)">
+                Overall Rating ★★★★☆</div>
+            </div>
+            <button class="btn btn-primary btn-full btn-sm" style="margin-top:14px">Submit Response</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRICING -->
+    <section style="padding:80px 24px" id="pricing">
+      <div style="text-align:center;margin-bottom:48px">
+        <div class="section-label">Pricing</div>
+        <div class="section-title">Simple, transparent pricing</div>
+      </div>
+      <div class="pricing-grid">
+        <div class="card pricing-card">
+          <div class="pricing-plan">Free</div>
+          <div class="pricing-price">$0 <span>/mo</span></div>
+          <div class="pricing-list">
+            <div class="pricing-item">5 forms</div>
+            <div class="pricing-item">100 responses/month</div>
+            <div class="pricing-item">CSV export</div>
+            <div class="pricing-item">Basic analytics</div>
+          </div>
+          <a href="/register" class="btn btn-secondary btn-full">Get Started</a>
+        </div>
+        <div class="card pricing-card pricing-featured">
+          <div class="pricing-plan">Pro</div>
+          <div class="pricing-price">$29 <span>/mo</span></div>
+          <div class="pricing-list">
+            <div class="pricing-item">Unlimited forms</div>
+            <div class="pricing-item">10,000 responses/month</div>
+            <div class="pricing-item">All export formats</div>
+            <div class="pricing-item">AI analysis</div>
+            <div class="pricing-item">QR codes</div>
+            <div class="pricing-item">Conditional logic</div>
+            <div class="pricing-item">Team collaboration (5)</div>
+          </div>
+          <a href="/register" class="btn btn-primary btn-full">Start Free Trial</a>
+        </div>
+        <div class="card pricing-card">
+          <div class="pricing-plan">Enterprise</div>
+          <div class="pricing-price">Custom</div>
+          <div class="pricing-list">
+            <div class="pricing-item">Unlimited everything</div>
+            <div class="pricing-item">Custom integrations</div>
+            <div class="pricing-item">SSO / SAML</div>
+            <div class="pricing-item">Dedicated support</div>
+            <div class="pricing-item">SLA guarantee</div>
+            <div class="pricing-item">Unlimited team members</div>
+          </div>
+          <a href="mailto:sales@snapyform.com" class="btn btn-secondary btn-full">Contact Sales</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer style="background:var(--surface);border-top:1px solid var(--border)">
+      <div class="footer-grid">
+        <div>
+          <div class="flex items-center gap-8 mb-16">
+            <div class="logo-mark">S</div><span class="logo-text">SnapyForm</span>
+          </div>
+          <div style="font-size:13px;color:var(--text-3);line-height:1.7;max-width:280px">The professional form builder
+            and data collection platform for modern teams.</div>
+        </div>
+        <div>
+          <div class="footer-col-title">Product</div>
+          <a class="footer-link" href="/templates">Templates</a>
+          <a class="footer-link" href="#features">Features</a>
+          <a class="footer-link" href="#pricing">Pricing</a>
+          <a class="footer-link" href="#">API Docs</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Company</div>
+          <a class="footer-link" href="#">About</a>
+          <a class="footer-link" href="#">Blog</a>
+          <a class="footer-link" href="#">Careers</a>
+          <a class="footer-link" href="#">Contact</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Legal</div>
+          <a class="footer-link" href="#">Privacy Policy</a>
+          <a class="footer-link" href="#">Terms of Service</a>
+          <a class="footer-link" href="#">Cookie Policy</a>
+          <a class="footer-link" href="#">Security</a>
+        </div>
+      </div>
+      <div
+        style="border-top:1px solid var(--border);padding:16px 48px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-4)">
+        <span>© 2026 SnapyForm. All rights reserved.</span>
+        <span>Built with ❤ for modern teams</span>
+      </div>
+    </footer>
+  </div>
+  <script>if (DocmoAPI.isLoggedIn()) { /* show logged-in nav variant */ }</script>
+</body>
+
+</html>

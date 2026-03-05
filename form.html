@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form – Docmo</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="js/db.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0d0d1a 0%, #121230 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-page {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+        }
+
+        .form-container {
+            max-width: 680px;
+            width: 100%;
+        }
+
+        .progress-wrap {
+            margin-bottom: 12px;
+        }
+
+        .form-hdr {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            padding: 24px 28px 20px;
+            border-bottom: none;
+        }
+
+        .form-bdy {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+            padding: 24px 28px 28px;
+        }
+
+        .field-block {
+            margin-bottom: 22px;
+        }
+
+        .field-q {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .req-star {
+            color: var(--rose);
+        }
+
+        .help-txt {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: -4px;
+            margin-bottom: 8px;
+        }
+
+        .star-input {
+            display: flex;
+            gap: 8px;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+        .star-input span {
+            color: var(--border);
+            transition: color .15s;
+            user-select: none;
+            line-height: 1;
+        }
+
+        .star-input span.filled,
+        .star-input:hover span.hov {
+            color: var(--amber);
+        }
+
+        .radio-item,
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 14px;
+        }
+
+        .radio-item:hover,
+        .check-item:hover {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .radio-item.selected {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .check-item.selected {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .check-item.selected input {
+            accent-color: var(--accent);
+        }
+
+        .sig-area {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            cursor: crosshair;
+            position: relative;
+            background: var(--bg-secondary);
+        }
+
+        .step-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid var(--border);
+        }
+
+        .step-dots {
+            display: flex;
+            gap: 7px;
+        }
+
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: .3s;
+        }
+
+        .step-dot.active {
+            background: var(--accent);
+            width: 20px;
+            border-radius: 4px;
+        }
+
+        /* error */
+        .field-err {
+            border-color: var(--rose) !important;
+        }
+
+        .err-msg {
+            font-size: 12px;
+            color: var(--rose);
+            margin-top: 4px;
+        }
+
+        /* Success */
+        .success-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 60px 32px;
+            text-align: center;
+        }
+
+        .success-anim {
+            font-size: 64px;
+            animation: float 2s ease-in-out infinite;
+            display: block;
+            margin-bottom: 14px;
+        }
+
+        .form-footer {
+            text-align: center;
+            padding: 14px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .form-footer a {
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form-page">
+        <div class="form-container" id="formContainer">
+            <!-- loading -->
+            <div class="card" style="padding:48px;text-align:center" id="loadingCard">
+                <div style="font-size:32px;margin-bottom:12px;animation:spin 1s linear infinite;display:inline-block">⏳
+                </div>
+                <div>Loading form...</div>
+            </div>
+        </div>
+    </div>
+    <div class="form-footer">Powered by <a href="index.html">Docmo</a> · <a href="index.html#privacy">Privacy</a></div>
+
+    <script>
+        DocmoDB.init();
+        const params = new URLSearchParams(location.search);
+        const formId = params.get('id');
+        let form = null;
+        let currentStep = 0;
+        let ratingVal = 0;
+        let radioVals = {};
+        let checkVals = {};
+        let answers = {};
+        let startTime = Date.now();
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applyTheme();
+            if (!formId) { showError('No form ID specified.'); return; }
+            form = DocmoDB.getForm(formId);
+            if (!form) { showError('This form does not exist or has been deleted.'); return; }
+            if (form.status === 'closed') { showError('This form is closed and no longer accepting responses.', '🔒'); return; }
+            buildForm();
+        });
+
+        function applyTheme() {
+            const user = DocmoDB.getUser();
+            if (user.theme) document.documentElement.setAttribute('data-theme', user.theme);
+        }
+
+        function showError(msg, icon = '❌') {
+            document.getElementById('formContainer').innerHTML = `<div class="card" style="padding:48px;text-align:center"><div style="font-size:52px;margin-bottom:16px">${icon}</div><h2 style="margin-bottom:10px">Oops!</h2><p style="color:var(--text-secondary);margin-bottom:24px">${msg}</p><a href="index.html" class="btn btn-primary">← Back to Docmo</a></div>`;
+        }
+
+        function buildForm() {
+            document.title = form.title + ' – Docmo';
+            const fields = form.fields || [];
+
+            // Split into pages of max 4 fields or keep all as 1 page
+            const pages = chunkFields(fields);
+            const totalPages = pages.length;
+
+            const container = document.getElementById('formContainer');
+
+            function renderPage(pageIdx) {
+                const pFields = pages[pageIdx] || [];
+                const pct = Math.round(((pageIdx) / totalPages) * 100);
+                container.innerHTML = `
+          ${form.showProgress !== false ? `
+          <div class="progress-wrap"><div class="flex justify-between text-sm mb-8" style="font-size:13px;color:var(--text-muted)"><span>Step ${pageIdx + 1} of ${totalPages}</span><span>${Math.round(((pageIdx + 1) / totalPages) * 100)}% complete</span></div><div class="progress-bar"><div class="progress-fill" id="pBar" style="width:${pct}%"></div></div></div>` : ''}
+          <div class="form-hdr">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+              <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${form.icon || '📋'}</div>
+              <div><h1 style="font-size:21px;font-weight:900;margin-bottom:3px">${escHtml(form.title)}</h1>${form.description ? `<p style="font-size:13px;color:var(--text-secondary)">${escHtml(form.description)}</p>` : ''}</div>
+            </div>
+            <span class="badge badge-green">${form.responseCount || 0} responses so far</span>
+          </div>
+          <div class="form-bdy">
+            <div id="fieldsArea"></div>
+            <div class="step-nav">
+              <button class="btn btn-secondary" id="backBtn" onclick="goBack(${pageIdx})" style="${pageIdx === 0 ? 'visibility:hidden' : ''}">← Back</button>
+              <div class="step-dots">${pages.map((_, i) => `<div class="step-dot${i === pageIdx ? ' active' : ''}"></div>`).join('')}</div>
+              <button class="btn btn-primary" id="nextBtn" onclick="goNext(${pageIdx}, ${totalPages})">${pageIdx === totalPages - 1 ? '✓ Submit' : 'Next →'}</button>
+            </div>
+          </div>`;
+
+                renderFields(pFields, pageIdx);
+                setTimeout(() => { const b = document.getElementById('pBar'); if (b) b.style.width = Math.round(((pageIdx + 1) / totalPages) * 100) + '%'; }, 50);
+            }
+
+            function renderFields(pFields, pageIdx) {
+                const area = document.getElementById('fieldsArea');
+                area.innerHTML = '';
+                pFields.forEach(f => {
+                    const saved = answers[f.id];
+                    const div = document.createElement('div');
+                    div.className = 'field-block';
+                    div.id = 'fb_' + f.id;
+                    let inner = `<div class="field-q">${escHtml(f.label)}${f.required ? '<span class="req-star">*</span>' : ''}</div>${f.helpText ? `<div class="help-txt">${escHtml(f.helpText)}</div>` : ''}`;
+
+                    if (f.type === 'text' || f.type === 'email' || f.type === 'phone') {
+                        inner += `<input class="input-field" id="fi_${f.id}" type="${f.type === 'email' ? 'email' : f.type === 'phone' ? 'tel' : 'text'}" placeholder="${escAttr(f.placeholder || '')}" value="${escAttr(saved || '')}" onchange="answers['${f.id}']=this.value">`;
+                    } else if (f.type === 'number') {
+                        inner += `<input class="input-field" id="fi_${f.id}" type="number" placeholder="${escAttr(f.placeholder || '0')}" value="${escAttr(saved || '')}" onchange="answers['${f.id}']=this.value">`;
+                    } else if (f.type === 'paragraph') {
+                        inner += `<textarea class="input-field" id="fi_${f.id}" placeholder="${escAttr(f.placeholder || '')}" style="min-height:100px" onchange="answers['${f.id}']=this.value">${escHtml(saved || '')}</textarea>`;
+                    } else if (f.type === 'date') {
+                        inner += `<input class="input-field" id="fi_${f.id}" type="date" value="${escAttr(saved || '')}" onchange="answers['${f.id}']=this.value">`;
+                    } else if (f.type === 'dropdown') {
+                        inner += `<select class="input-field" id="fi_${f.id}" onchange="answers['${f.id}']=this.value"><option value="">Select an option</option>${(f.options || []).map(o => `<option${saved === o ? ' selected' : ''}>${escHtml(o)}</option>`).join('')}</select>`;
+                    } else if (f.type === 'radio') {
+                        const sv = radioVals[f.id];
+                        inner += (f.options || []).map(o => `<div class="radio-item${sv === o ? ' selected' : ''}" onclick="setRadio('${f.id}','${escAttr(o)}',this)">${sv === o ? '●' : '○'} ${escHtml(o)}</div>`).join('');
+                    } else if (f.type === 'checkbox') {
+                        const sv = checkVals[f.id] || {};
+                        inner += (f.options || []).map(o => `<div class="check-item${sv[o] ? ' selected' : ''}" onclick="toggleCheck('${f.id}','${escAttr(o)}',this)"><input type="checkbox" ${sv[o] ? 'checked' : ''} style="accent-color:var(--accent)"> ${escHtml(o)}</div>`).join('');
+                    } else if (f.type === 'rating') {
+                        const rv = ratingVal;
+                        inner += `<div class="star-input" id="star_${f.id}">${[1, 2, 3, 4, 5].map(n => `<span class="${n <= rv ? 'filled' : ''}" onclick="setRating('${f.id}',${n})" onmouseover="hoverStar('${f.id}',${n})" onmouseout="unhoverStar('${f.id}')">${n <= rv ? '★' : '☆'}</span>`).join('')}</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px" id="ratingLbl_${f.id}">${rv ? rv + '/5 stars' : 'Click to rate'}</div>`;
+                    } else if (f.type === 'file') {
+                        inner += `<div style="border:1px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:var(--transition)" onclick="document.getElementById('fi_${f.id}').click()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><div style="font-size:28px;margin-bottom:6px">📎</div><div style="font-size:13px;font-weight:600;margin-bottom:2px">Click to upload</div><div style="font-size:12px;color:var(--text-muted)">or drag & drop</div></div><input type="file" id="fi_${f.id}" style="display:none" onchange="answers['${f.id}']=this.files[0]?.name||'';document.getElementById('fb_${f.id}').querySelector('div div:last-child').textContent=this.files[0]?.name||'or drag & drop'">`;
+                    } else if (f.type === 'signature') {
+                        inner += `<div class="sig-area" id="fi_${f.id}"><span style="font-size:13px">✍️ Tap/click to sign (demo)</span></div>`;
+                    } else if (f.type === 'divider') {
+                        inner += `<hr style="border-color:var(--border)">`;
+                    } else if (f.type === 'heading') {
+                        inner = `<h2 style="font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px">${escHtml(f.label)}</h2>`;
+                    }
+                    inner += `<div class="err-msg" id="err_${f.id}" style="display:none"></div>`;
+                    div.innerHTML = inner;
+                    area.appendChild(div);
+                });
+            }
+
+            function goNext(pageIdx, total) {
+                const pFields = pages[pageIdx];
+                if (!validatePage(pFields)) return;
+                if (pageIdx >= total - 1) { submitForm(); } else { currentStep = pageIdx + 1; renderPage(currentStep); window.scrollTo(0, 0); }
+            }
+            function goBack(pageIdx) { if (pageIdx > 0) { currentStep = pageIdx - 1; renderPage(currentStep); window.scrollTo(0, 0); } }
+
+            // expose to inline handlers
+            window.goNext = goNext;
+            window.goBack = goBack;
+
+            renderPage(0);
+        }
+
+        function chunkFields(fields) {
+            // Split into pages: each page has up to 5 fields (or break at 'heading'/'divider')
+            if (!fields || !fields.length) return [[]];
+            const chunks = [];
+            let chunk = [];
+            fields.forEach((f, i) => {
+                if (f.type === 'heading' && chunk.length > 0) { chunks.push(chunk); chunk = [f]; }
+                else { chunk.push(f); if (chunk.length >= 5 && i < fields.length - 1) { chunks.push(chunk); chunk = []; } }
+            });
+            if (chunk.length) chunks.push(chunk);
+            return chunks;
+        }
+
+        function validatePage(pFields) {
+            let valid = true;
+            pFields.forEach(f => {
+                const errEl = document.getElementById('err_' + f.id);
+                if (!errEl) return;
+                let val = answers[f.id] || radioVals[f.id] || '';
+                if (f.type === 'checkbox') val = Object.keys(checkVals[f.id] || {}).filter(k => checkVals[f.id][k]).join(',');
+                if (f.type === 'rating') val = ratingVal ? String(ratingVal) : '';
+                if (f.required && !val) {
+                    errEl.textContent = 'This field is required';
+                    errEl.style.display = 'block';
+                    const inp = document.getElementById('fi_' + f.id);
+                    if (inp) { inp.classList.add('field-err'); inp.focus(); }
+                    valid = false;
+                } else {
+                    errEl.style.display = 'none';
+                    const inp = document.getElementById('fi_' + f.id);
+                    if (inp) inp.classList.remove('field-err');
+                }
+            });
+            return valid;
+        }
+
+        function setRadio(fid, val, el) {
+            radioVals[fid] = val;
+            answers[fid] = val;
+            const fb = document.getElementById('fb_' + fid);
+            if (fb) fb.querySelectorAll('.radio-item').forEach(i => i.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function toggleCheck(fid, val, el) {
+            if (!checkVals[fid]) checkVals[fid] = {};
+            checkVals[fid][val] = !checkVals[fid][val];
+            el.classList.toggle('selected', checkVals[fid][val]);
+            const cb = el.querySelector('input');
+            if (cb) cb.checked = checkVals[fid][val];
+            const sel = Object.keys(checkVals[fid]).filter(k => checkVals[fid][k]);
+            answers[fid] = sel.join(', ');
+        }
+
+        function setRating(fid, n) {
+            ratingVal = n;
+            answers[fid] = String(n);
+            const stars = document.getElementById('star_' + fid);
+            if (stars) stars.querySelectorAll('span').forEach((s, i) => { s.textContent = i < n ? '★' : '☆'; s.classList.toggle('filled', i < n); });
+            const lbl = document.getElementById('ratingLbl_' + fid);
+            if (lbl) lbl.textContent = n + '/5 stars';
+        }
+
+        function hoverStar(fid, n) {
+            const stars = document.getElementById('star_' + fid);
+            if (stars) stars.querySelectorAll('span').forEach((s, i) => { s.classList.toggle('hov', i < n); });
+        }
+        function unhoverStar(fid) {
+            const stars = document.getElementById('star_' + fid);
+            if (stars) stars.querySelectorAll('span').forEach(s => s.classList.remove('hov'));
+        }
+
+        function submitForm() {
+            // Build final answers
+            const finalAnswers = { ...answers };
+            (form.fields || []).forEach(f => {
+                if (f.type === 'rating' && !finalAnswers[f.id]) finalAnswers[f.id] = String(ratingVal || 0);
+                if (f.type === 'radio' && radioVals[f.id]) finalAnswers[f.id] = radioVals[f.id];
+            });
+
+            // Label the answers by field label
+            const labeledAnswers = {};
+            (form.fields || []).forEach(f => { if (finalAnswers[f.id]) labeledAnswers[f.label] = finalAnswers[f.id]; });
+
+            // Save to localStorage
+            DocmoDB.addResponse(formId, labeledAnswers);
+
+            // Show success
+            document.getElementById('formContainer').innerHTML = `
+        <div class="success-card">
+          <span class="success-anim">🎉</span>
+          <h2 style="font-size:26px;font-weight:900;margin-bottom:10px">Thank you!</h2>
+          <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;max-width:360px;margin-left:auto;margin-right:auto">Your response has been submitted successfully. We appreciate your time!</p>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-secondary" onclick="location.reload()">Submit Another Response</button>
+            <a href="index.html" class="btn btn-primary">← Back to Docmo</a>
+          </div>
+        </div>`;
+        }
+
+        function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function escAttr(s) { return String(s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+    </script>
+</body>
+
+</html>

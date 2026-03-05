@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings – Docmo</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="js/db.js"></script>
+    <style>
+        body {
+            background: var(--bg-primary);
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 20px;
+        }
+
+        .settings-nav {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 8px;
+            overflow-y: auto;
+            height: fit-content;
+        }
+
+        .sn-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--text-muted);
+            padding: 10px 12px 4px;
+        }
+
+        .sn-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 2px;
+        }
+
+        .sn-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .sn-item.active {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .sn-item.danger:hover {
+            background: var(--rose-soft);
+            color: var(--rose);
+        }
+
+        .sp {
+            display: none;
+        }
+
+        .sp.active {
+            display: block;
+        }
+
+        .ss {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            margin-bottom: 18px;
+        }
+
+        .ss h3 {
+            font-size: 16px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .ss>p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 18px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .theme-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .theme-opt {
+            flex: 1;
+            padding: 11px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .theme-opt.active,
+        .theme-opt:hover {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .notif-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .notif-row:last-child {
+            border-bottom: none;
+        }
+
+        .notif-lbl {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .notif-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .api-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+        }
+
+        .api-box span {
+            flex: 1;
+            font-family: monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .member-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .member-row:last-child {
+            border-bottom: none;
+        }
+
+        .danger-sec {
+            background: rgba(244, 63, 94, .06);
+            border: 1px solid rgba(244, 63, 94, .2);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            margin-bottom: 18px;
+        }
+
+        .danger-sec h3 {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--rose);
+            margin-bottom: 4px;
+        }
+
+        .danger-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px;
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+
+        .danger-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            padding: 11px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 999;
+            color: white;
+            animation: fadeInUp .3s ease;
+            font-size: 13px;
+        }
+
+        .avatar-big {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        @media(max-width:768px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <a href="index.html" class="sidebar-logo">
+            <div class="logo-icon">📋</div><span>Docmo</span>
+        </a>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+            <a href="dashboard.html" class="nav-item"><span class="nav-icon">📋</span> My Forms</a>
+            <a href="responses.html" class="nav-item"><span class="nav-icon">📊</span> Responses</a>
+            <a href="export.html" class="nav-item"><span class="nav-icon">📥</span> Export</a>
+            <a href="settings.html" class="nav-item active"><span class="nav-icon">⚙️</span> Settings</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="uAvatar">JS</div>
+                <div>
+                    <div style="font-size:13px;font-weight:600" id="uName">User</div>
+                    <div style="font-size:11px;color:var(--text-muted)" id="uPlan">Free Plan</div>
+                </div>
+                <a href="login.html" style="margin-left:auto;font-size:18px;color:var(--text-muted);cursor:pointer"
+                    onclick="logout()" title="Logout">🚪</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Settings</h1>
+                <p class="page-subtitle">Manage your account and preferences</p>
+            </div>
+            <button class="btn btn-primary" onclick="saveAll()">💾 Save Changes</button>
+        </div>
+
+        <div class="settings-grid">
+            <!-- LEFT NAV -->
+            <div class="settings-nav">
+                <div class="sn-title">Account</div>
+                <div class="sn-item active" onclick="switchTab('profile',this)">👤 Profile</div>
+                <div class="sn-item" onclick="switchTab('prefs',this)">🎨 Preferences</div>
+                <div class="sn-item" onclick="switchTab('notifs',this)">🔔 Notifications</div>
+                <div class="sn-title">Developer</div>
+                <div class="sn-item" onclick="switchTab('api',this)">🔑 API Keys</div>
+                <div class="sn-item" onclick="switchTab('webhooks',this)">🔗 Webhooks</div>
+                <div class="sn-title">Team</div>
+                <div class="sn-item" onclick="switchTab('team',this)">👥 Members</div>
+                <div class="sn-item" onclick="switchTab('billing',this)">💳 Billing</div>
+                <div class="sn-title">Data</div>
+                <div class="sn-item danger" onclick="switchTab('danger',this)" style="color:var(--rose)">⚠️ Danger Zone
+                </div>
+            </div>
+
+            <!-- RIGHT CONTENT -->
+            <div>
+                <!-- PROFILE -->
+                <div id="tab-profile" class="sp active">
+                    <div class="ss">
+                        <h3>Profile Information</h3>
+                        <p>Update your name, email, and account details</p>
+                        <div style="display:flex;align-items:center;gap:18px;margin-bottom:20px">
+                            <div class="avatar-big" id="avatarBig">JS</div>
+                            <div>
+                                <button class="btn btn-secondary btn-sm mb-6">📷 Upload Photo</button>
+                                <div style="font-size:11px;color:var(--text-muted)">JPG, PNG up to 5MB</div>
+                            </div>
+                        </div>
+                        <div class="form-row mb-14">
+                            <div class="input-group"><label class="input-label">First Name</label><input type="text"
+                                    class="input-field" id="pFirstName"></div>
+                            <div class="input-group"><label class="input-label">Last Name</label><input type="text"
+                                    class="input-field" id="pLastName"></div>
+                        </div>
+                        <div class="input-group mb-14">
+                            <label class="input-label">Email Address</label>
+                            <div style="position:relative"><input type="email" class="input-field" id="pEmail"
+                                    style="padding-right:90px"><span class="badge badge-green"
+                                    style="position:absolute;right:10px;top:50%;transform:translateY(-50%)">✓
+                                    Verified</span></div>
+                        </div>
+                        <div class="form-row mb-14">
+                            <div class="input-group"><label class="input-label">Phone</label><input type="tel"
+                                    class="input-field" id="pPhone" placeholder="+91 9876543210"></div>
+                            <div class="input-group"><label class="input-label">Company</label><input type="text"
+                                    class="input-field" id="pCompany" placeholder="Your company"></div>
+                        </div>
+                        <div class="input-group"><label class="input-label">Bio</label><textarea class="input-field"
+                                id="pBio" style="min-height:72px" placeholder="Tell us about yourself..."></textarea>
+                        </div>
+                    </div>
+                    <div class="ss">
+                        <h3>Change Password</h3>
+                        <p>Update your account password</p>
+                        <div class="input-group mb-14"><label class="input-label">Current Password</label><input
+                                type="password" class="input-field" id="pCurrPwd" placeholder="••••••••"></div>
+                        <div class="form-row">
+                            <div class="input-group"><label class="input-label">New Password</label><input
+                                    type="password" class="input-field" id="pNewPwd" placeholder="Min. 8 characters">
+                            </div>
+                            <div class="input-group"><label class="input-label">Confirm Password</label><input
+                                    type="password" class="input-field" id="pConfPwd" placeholder="Repeat password">
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm mt-14" onclick="changePassword()">🔒 Change
+                            Password</button>
+                    </div>
+                </div>
+
+                <!-- PREFS -->
+                <div id="tab-prefs" class="sp">
+                    <div class="ss">
+                        <h3>Appearance</h3>
+                        <p>Customize how Docmo looks</p>
+                        <div class="input-group mb-16">
+                            <label class="input-label">Theme</label>
+                            <div class="theme-row">
+                                <div class="theme-opt" id="thLight" onclick="setTheme('light')">☀️ Light</div>
+                                <div class="theme-opt" id="thDark" onclick="setTheme('dark')">🌙 Dark</div>
+                                <div class="theme-opt" id="thSystem" onclick="setTheme('system')">💻 System</div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group"><label class="input-label">Language</label><select
+                                    class="input-field" id="pLang">
+                                    <option value="en">English</option>
+                                    <option value="hi">Hindi</option>
+                                    <option value="ta">Tamil</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="fr">French</option>
+                                </select></div>
+                            <div class="input-group"><label class="input-label">Date Format</label><select
+                                    class="input-field" id="pDateFmt">
+                                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                    <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                </select></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NOTIFICATIONS -->
+                <div id="tab-notifs" class="sp">
+                    <div class="ss">
+                        <h3>Email Notifications</h3>
+                        <p>Choose which emails you receive</p>
+                        <div id="notifRows"></div>
+                    </div>
+                </div>
+
+                <!-- API -->
+                <div id="tab-api" class="sp">
+                    <div class="ss">
+                        <h3>API Access</h3>
+                        <p>Use your API key to integrate Docmo with other applications</p>
+                        <div class="input-group mb-16">
+                            <label class="input-label">API Key</label>
+                            <div class="api-box">
+                                <span id="apiKeyDisplay">sk-docmo-••••-••••-••••-••••</span>
+                                <button class="btn btn-secondary btn-sm" onclick="toggleAPIKey()">👁 Show</button>
+                                <button class="btn btn-secondary btn-sm" onclick="copyAPIKey()">📋 Copy</button>
+                                <button class="btn btn-danger btn-sm" onclick="regenAPIKey()">🔄 New Key</button>
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+                            <div class="card" style="text-align:center;padding:14px">
+                                <div style="font-size:22px;font-weight:800" id="apiCalls">0</div>
+                                <div style="font-size:12px;color:var(--text-muted)">API Calls (month)</div>
+                            </div>
+                            <div class="card" style="text-align:center;padding:14px">
+                                <div style="font-size:22px;font-weight:800;color:var(--emerald)">10,000</div>
+                                <div style="font-size:12px;color:var(--text-muted)">Monthly Limit</div>
+                            </div>
+                            <div class="card" style="text-align:center;padding:14px">
+                                <div style="font-size:22px;font-weight:800" id="apiQuota">100%</div>
+                                <div style="font-size:12px;color:var(--text-muted)">Quota Remaining</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:14px;font-size:13px;color:var(--text-secondary)">Base URL: <code
+                                style="background:var(--bg-secondary);padding:2px 6px;border-radius:4px;font-size:12px">https://api.docmo.app/v1</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WEBHOOKS -->
+                <div id="tab-webhooks" class="sp">
+                    <div class="ss">
+                        <h3>Webhooks</h3>
+                        <p>Get real-time POST requests when a form is submitted</p>
+                        <div class="input-group mb-14"><label class="input-label">Webhook URL</label><input type="url"
+                                class="input-field" id="whUrl" placeholder="https://hooks.zapier.com/..."></div>
+                        <div class="input-group mb-14"><label class="input-label">Secret Token (optional)</label><input
+                                type="text" class="input-field" id="whSecret"
+                                placeholder="For request signature verification"></div>
+                        <div class="input-group mb-14">
+                            <label class="input-label">Trigger Events</label>
+                            <div class="flex gap-16 mt-8 flex-wrap">
+                                <label class="flex items-center gap-8 text-sm cursor-pointer"><input type="checkbox"
+                                        id="evResp" checked style="accent-color:var(--accent)"> response_created</label>
+                                <label class="flex items-center gap-8 text-sm cursor-pointer"><input type="checkbox"
+                                        id="evDel" style="accent-color:var(--accent)"> response_deleted</label>
+                                <label class="flex items-center gap-8 text-sm cursor-pointer"><input type="checkbox"
+                                        id="evForm" style="accent-color:var(--accent)"> form_updated</label>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="saveWebhook()">+ Add Webhook</button>
+                        <div id="webhookList" style="margin-top:14px"></div>
+                    </div>
+                </div>
+
+                <!-- TEAM -->
+                <div id="tab-team" class="sp">
+                    <div class="ss">
+                        <h3>Team Members</h3>
+                        <p>Invite collaborators to work on your forms</p>
+                        <div class="flex gap-10 mb-16 flex-wrap">
+                            <input type="email" class="input-field" id="inviteEmail" placeholder="colleague@company.com"
+                                style="flex:1">
+                            <select class="input-field" id="inviteRole" style="width:120px">
+                                <option value="editor">Editor</option>
+                                <option value="viewer">Viewer</option>
+                                <option value="owner">Owner</option>
+                            </select>
+                            <button class="btn btn-primary btn-sm" onclick="inviteMember()"
+                                style="white-space:nowrap">✉️ Invite</button>
+                        </div>
+                        <div id="membersList"></div>
+                    </div>
+                </div>
+
+                <!-- BILLING -->
+                <div id="tab-billing" class="sp">
+                    <div class="ss">
+                        <h3>Current Plan</h3>
+                        <p>Manage your subscription</p>
+                        <div class="flex gap-12 mb-16">
+                            <div class="badge badge-accent" style="font-size:14px;padding:8px 20px" id="planBadge">Free
+                                Plan</div>
+                            <div class="badge badge-green">✓ Active</div>
+                        </div>
+                        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:18px">Upgrade to Pro to
+                            unlock unlimited forms, advanced exports, AI generation, and team collaboration.</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                            <div class="card" style="border:2px solid var(--border);padding:20px">
+                                <div style="font-size:16px;font-weight:800;margin-bottom:4px">Free</div>
+                                <div style="font-size:24px;font-weight:900;margin-bottom:12px">$0<span
+                                        style="font-size:13px;font-weight:400;color:var(--text-muted)">/month</span>
+                                </div>
+                                <div style="font-size:12px;color:var(--text-muted)">5 forms · 100 responses/form · Basic
+                                    export</div>
+                            </div>
+                            <div class="card"
+                                style="border:2px solid var(--accent);padding:20px;background:var(--accent-soft)">
+                                <div style="font-size:16px;font-weight:800;margin-bottom:4px;color:var(--accent)">Pro ✨
+                                </div>
+                                <div style="font-size:24px;font-weight:900;margin-bottom:12px">$19<span
+                                        style="font-size:13px;font-weight:400;color:var(--text-muted)">/month</span>
+                                </div>
+                                <div style="font-size:12px;color:var(--text-secondary)">Unlimited forms · AI generation
+                                    · All exports · Team</div>
+                                <button class="btn btn-primary btn-sm mt-12 btn-full"
+                                    onclick="showToast('🎉 Upgrade coming soon!','var(--accent)')">Upgrade to
+                                    Pro</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DANGER -->
+                <div id="tab-danger" class="sp">
+                    <div class="danger-sec">
+                        <h3>⚠️ Danger Zone</h3>
+                        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:18px">These actions are
+                            irreversible. Proceed with extreme caution.</p>
+                        <div class="danger-row">
+                            <div>
+                                <div style="font-weight:600">Export all my data</div>
+                                <div style="font-size:12px;color:var(--text-muted)">Download everything – forms,
+                                    responses, settings</div>
+                            </div><button class="btn btn-secondary btn-sm" onclick="exportAllData()">Export
+                                Archive</button>
+                        </div>
+                        <div class="danger-row">
+                            <div>
+                                <div style="font-weight:600">Reset all forms</div>
+                                <div style="font-size:12px;color:var(--text-muted)">Delete all forms and their responses
+                                    permanently</div>
+                            </div><button class="btn btn-danger btn-sm" onclick="resetForms()">Reset All Forms</button>
+                        </div>
+                        <div class="danger-row" style="border-color:rgba(244,63,94,.3);background:rgba(244,63,94,.04)">
+                            <div>
+                                <div style="font-weight:600;color:var(--rose)">Delete Account</div>
+                                <div style="font-size:12px;color:var(--text-muted)">Remove all data and close your Docmo
+                                    account</div>
+                            </div><button class="btn btn-danger btn-sm" onclick="deleteAccount()">Delete
+                                Account</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        DocmoDB.init();
+        let apiKeyShown = false;
+        const API_KEY_DEMO = 'sk-docmo-' + Math.random().toString(36).slice(2, 18);
+
+        const NOTIFS = [
+            { id: 'n_resp', lbl: 'New response received', desc: 'Email when someone fills your form', def: true },
+            { id: 'n_limit', lbl: 'Response limit reached', desc: 'Alert at 90% capacity', def: true },
+            { id: 'n_digest', lbl: 'Weekly digest', desc: 'Summary every Monday', def: true },
+            { id: 'n_deadline', lbl: 'Form deadline reminder', desc: '24h before deadline', def: false },
+            { id: 'n_team', lbl: 'Team activity', desc: 'When collaborators make changes', def: false },
+            { id: 'n_mkt', lbl: 'Product updates', desc: 'New features and announcements', def: true },
+        ];
+
+        const MEMBERS_DEMO = [
+            { name: 'Sarah Connor', email: 'sarah@company.com', role: 'Editor', avatar: 'SC', status: 'active' },
+            { name: 'Mike Chen', email: 'mike@company.com', role: 'Viewer', avatar: 'MC', status: 'active' },
+            { email: 'priya@partner.in', role: 'Viewer', avatar: '?', status: 'pending' },
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applyTheme();
+            loadUser();
+            renderNotifs();
+            renderMembers();
+            renderWebhooks();
+        });
+
+        function applyTheme() {
+            const user = DocmoDB.getUser();
+            const t = user.theme || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            document.querySelectorAll('.theme-opt').forEach(el => el.classList.remove('active'));
+            const map = { dark: 'thDark', light: 'thLight', system: 'thSystem' };
+            if (map[t]) document.getElementById(map[t])?.classList.add('active');
+        }
+
+        function loadUser() {
+            const u = DocmoDB.getUser();
+            document.getElementById('uAvatar').textContent = u.avatar || 'U';
+            document.getElementById('uName').textContent = u.name || 'User';
+            document.getElementById('uPlan').textContent = (u.plan || 'Free') + ' Plan';
+            document.getElementById('avatarBig').textContent = u.avatar || 'U';
+            document.getElementById('pFirstName').value = u.firstName || '';
+            document.getElementById('pLastName').value = u.lastName || '';
+            document.getElementById('pEmail').value = u.email || '';
+            document.getElementById('pPhone').value = u.phone || '';
+            document.getElementById('pCompany').value = u.company || '';
+            document.getElementById('pBio').value = u.bio || '';
+            const apiCalls = Math.floor(Math.random() * 1500);
+            document.getElementById('apiCalls').textContent = apiCalls;
+            document.getElementById('apiQuota').textContent = Math.round((1 - apiCalls / 10000) * 100) + '%';
+            document.getElementById('planBadge').textContent = (u.plan || 'Free') + ' Plan';
+            if (u.lang) document.getElementById('pLang').value = u.lang;
+            if (u.dateFmt) document.getElementById('pDateFmt').value = u.dateFmt;
+        }
+
+        function renderNotifs() {
+            const saved = JSON.parse(localStorage.getItem('docmo_notifs') || '{}');
+            document.getElementById('notifRows').innerHTML = NOTIFS.map(n => `
+        <div class="notif-row">
+          <div><div class="notif-lbl">${n.lbl}</div><div class="notif-desc">${n.desc}</div></div>
+          <div class="toggle-switch ${(saved[n.id] ?? n.def) ? 'on' : ''}" id="${n.id}" onclick="toggleNotif('${n.id}')"></div>
+        </div>`).join('');
+        }
+
+        function toggleNotif(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('on');
+            const saved = JSON.parse(localStorage.getItem('docmo_notifs') || '{}');
+            saved[id] = el.classList.contains('on');
+            localStorage.setItem('docmo_notifs', JSON.stringify(saved));
+        }
+
+        function renderMembers() {
+            const members = JSON.parse(localStorage.getItem('docmo_members') || 'null') || MEMBERS_DEMO;
+            document.getElementById('membersList').innerHTML = members.map((m, i) => `
+        <div class="member-row">
+          <div class="avatar" style="width:34px;height:34px;font-size:12px">${m.avatar || m.email[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">${m.name || m.email}</div><div style="font-size:12px;color:var(--text-muted)">${m.email}</div></div>
+          <span class="badge ${m.status === 'pending' ? 'badge-amber' : 'badge-green'}">${m.status}</span>
+          <select class="input-field" style="width:110px;padding:5px 8px;font-size:12px" onchange="updateMemberRole(${i},this.value)"><option ${m.role === 'Editor' ? 'selected' : ''}>Editor</option><option ${m.role === 'Viewer' ? 'selected' : ''}>Viewer</option><option ${m.role === 'Owner' ? 'selected' : ''}>Owner</option></select>
+          <button class="btn btn-ghost btn-sm" style="color:var(--rose);flex-shrink:0" onclick="removeMember(${i})">✕</button>
+        </div>`).join('');
+        }
+
+        function inviteMember() {
+            const email = document.getElementById('inviteEmail').value.trim();
+            if (!email || !email.includes('@')) { showToast('❌ Enter a valid email', 'var(--rose)'); return; }
+            const role = document.getElementById('inviteRole').value;
+            const members = JSON.parse(localStorage.getItem('docmo_members') || 'null') || MEMBERS_DEMO;
+            members.push({ email, role: role.charAt(0).toUpperCase() + role.slice(1), avatar: email[0].toUpperCase(), status: 'pending' });
+            localStorage.setItem('docmo_members', JSON.stringify(members));
+            document.getElementById('inviteEmail').value = '';
+            renderMembers();
+            showToast('✉️ Invite sent to ' + email, 'var(--emerald)');
+        }
+
+        function removeMember(i) {
+            if (!confirm('Remove this member?')) return;
+            const members = JSON.parse(localStorage.getItem('docmo_members') || 'null') || MEMBERS_DEMO;
+            members.splice(i, 1);
+            localStorage.setItem('docmo_members', JSON.stringify(members));
+            renderMembers();
+            showToast('Member removed', 'var(--rose)');
+        }
+
+        function updateMemberRole(i, role) {
+            const members = JSON.parse(localStorage.getItem('docmo_members') || 'null') || MEMBERS_DEMO;
+            if (members[i]) members[i].role = role;
+            localStorage.setItem('docmo_members', JSON.stringify(members));
+            showToast('✅ Role updated', 'var(--emerald)');
+        }
+
+        function renderWebhooks() {
+            const hooks = JSON.parse(localStorage.getItem('docmo_webhooks') || '[]');
+            document.getElementById('webhookList').innerHTML = hooks.length ? hooks.map((h, i) => `
+        <div class="card mb-8" style="padding:12px 14px;display:flex;align-items:center;gap:10px">
+          <div class="badge badge-green" style="flex-shrink:0">Active</div>
+          <span style="flex:1;font-family:monospace;font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.url}</span>
+          <button class="btn btn-ghost btn-sm" style="color:var(--rose);flex-shrink:0" onclick="removeWebhook(${i})">🗑</button>
+        </div>`).join('') : '';
+        }
+
+        function saveWebhook() {
+            const url = document.getElementById('whUrl').value.trim();
+            if (!url) { showToast('❌ Enter a webhook URL', 'var(--rose)'); return; }
+            const hooks = JSON.parse(localStorage.getItem('docmo_webhooks') || '[]');
+            hooks.push({ url, secret: document.getElementById('whSecret').value, events: { response_created: document.getElementById('evResp').checked, response_deleted: document.getElementById('evDel').checked, form_updated: document.getElementById('evForm').checked } });
+            localStorage.setItem('docmo_webhooks', JSON.stringify(hooks));
+            document.getElementById('whUrl').value = '';
+            renderWebhooks();
+            showToast('✅ Webhook saved!', 'var(--emerald)');
+        }
+
+        function removeWebhook(i) {
+            const hooks = JSON.parse(localStorage.getItem('docmo_webhooks') || '[]');
+            hooks.splice(i, 1);
+            localStorage.setItem('docmo_webhooks', JSON.stringify(hooks));
+            renderWebhooks();
+        }
+
+        function setTheme(t) {
+            document.documentElement.setAttribute('data-theme', t === 'system' ? 'dark' : t);
+            DocmoDB.updateUser({ theme: t === 'system' ? 'dark' : t });
+            document.querySelectorAll('.theme-opt').forEach(el => el.classList.remove('active'));
+            const map = { dark: 'thDark', light: 'thLight', system: 'thSystem' };
+            document.getElementById(map[t])?.classList.add('active');
+        }
+
+        function saveAll() {
+            const u = DocmoDB.getUser();
+            const fn = document.getElementById('pFirstName').value.trim();
+            const ln = document.getElementById('pLastName').value.trim();
+            DocmoDB.updateUser({
+                firstName: fn, lastName: ln, name: (fn + ' ' + ln).trim() || u.name,
+                email: document.getElementById('pEmail').value.trim(),
+                phone: document.getElementById('pPhone').value.trim(),
+                company: document.getElementById('pCompany').value.trim(),
+                bio: document.getElementById('pBio').value.trim(),
+                avatar: fn ? fn[0].toUpperCase() + (ln ? ln[0].toUpperCase() : '') : u.avatar,
+                lang: document.getElementById('pLang').value,
+                dateFmt: document.getElementById('pDateFmt').value
+            });
+            loadUser();
+            showToast('✅ Settings saved!', 'var(--emerald)');
+        }
+
+        function changePassword() {
+            const cur = document.getElementById('pCurrPwd').value;
+            const n1 = document.getElementById('pNewPwd').value;
+            const n2 = document.getElementById('pConfPwd').value;
+            if (!cur) { showToast('❌ Enter current password', 'var(--rose)'); return; }
+            if (n1.length < 8) { showToast('❌ New password must be 8+ characters', 'var(--rose)'); return; }
+            if (n1 !== n2) { showToast('❌ Passwords do not match', 'var(--rose)'); return; }
+            showToast('✅ Password changed!', 'var(--emerald)');
+            document.getElementById('pCurrPwd').value = ''; document.getElementById('pNewPwd').value = ''; document.getElementById('pConfPwd').value = '';
+        }
+
+        // API Key
+        function toggleAPIKey() { apiKeyShown = !apiKeyShown; document.getElementById('apiKeyDisplay').textContent = apiKeyShown ? API_KEY_DEMO : 'sk-docmo-••••-••••-••••-••••'; }
+        function copyAPIKey() { navigator.clipboard.writeText(API_KEY_DEMO).catch(() => { }); showToast('📋 API key copied!', 'var(--emerald)'); }
+        function regenAPIKey() { if (confirm('Generate a new API key? The old key will stop working immediately.')) showToast('🔄 New key generated!', 'var(--accent)'); }
+
+        // Danger
+        function exportAllData() {
+            const data = { user: DocmoDB.getUser(), forms: DocmoDB.getForms(), responses: DocmoDB.getResponses() };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'docmo_archive.json'; a.click();
+            showToast('✅ Archive downloaded!', 'var(--emerald)');
+        }
+
+        function resetForms() {
+            if (!confirm('Delete ALL your forms and responses permanently?')) return;
+            localStorage.setItem('docmo_forms', '[]');
+            localStorage.setItem('docmo_responses', '[]');
+            showToast('🗑 All forms deleted', 'var(--rose)');
+        }
+
+        function deleteAccount() {
+            if (!confirm('Are you absolutely sure? This will delete EVERYTHING and cannot be undone.')) return;
+            if (!confirm('Last chance — delete your Docmo account?')) return;
+            localStorage.clear();
+            window.location = 'login.html';
+        }
+
+        function logout() { if (confirm('Log out?')) { localStorage.removeItem('docmo_logged_in'); window.location = 'login.html'; } }
+
+        function switchTab(tab, el) {
+            document.querySelectorAll('.sp').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.sn-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            el.classList.add('active');
+        }
+
+        function showToast(msg, color = 'var(--accent)') {
+            document.querySelectorAll('.toast').forEach(x => x.remove());
+            const t = document.createElement('div'); t.className = 'toast'; t.style.background = color; t.textContent = msg; document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 2500); setTimeout(() => t.remove(), 3000);
+        }
+
+        document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveAll(); } });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,78 @@
+[
+  {
+    "id": "log_1772699913072",
+    "action": "user_login",
+    "userId": "user_a8f7aecbb1",
+    "meta": {
+      "email": "demo@snapyform.com"
+    },
+    "timestamp": "2026-03-05T08:38:33.073Z"
+  },
+  {
+    "id": "log_1772698733173",
+    "action": "response_submitted",
+    "userId": "user_75401baf6c",
+    "meta": {
+      "formId": "form_e1019d0d613c",
+      "responseId": "resp_130835815aa6"
+    },
+    "timestamp": "2026-03-05T08:18:53.173Z"
+  },
+  {
+    "id": "log_1772698635687",
+    "action": "form_created",
+    "userId": "user_75401baf6c",
+    "meta": {
+      "formId": "form_e1019d0d613c",
+      "title": "STUDENT SURVEY"
+    },
+    "timestamp": "2026-03-05T08:17:15.688Z"
+  },
+  {
+    "id": "log_1772698577840",
+    "action": "user_register",
+    "userId": "user_75401baf6c",
+    "meta": {
+      "email": "info.elumugam@gmail.com"
+    },
+    "timestamp": "2026-03-05T08:16:17.840Z"
+  },
+  {
+    "id": "log_1772698483278",
+    "action": "form_deleted",
+    "userId": "user_a8f7aecbb1",
+    "meta": {
+      "formId": "form_fc1cbb07656f",
+      "title": "AI Generated Form"
+    },
+    "timestamp": "2026-03-05T08:14:43.278Z"
+  },
+  {
+    "id": "log_1772698370738",
+    "action": "form_created",
+    "userId": "user_a8f7aecbb1",
+    "meta": {
+      "formId": "form_fc1cbb07656f",
+      "title": "AI Generated Form"
+    },
+    "timestamp": "2026-03-05T08:12:50.738Z"
+  },
+  {
+    "id": "log_1772698370728",
+    "action": "ai_generate",
+    "userId": "user_a8f7aecbb1",
+    "meta": {
+      "prompt": "create form for student registration"
+    },
+    "timestamp": "2026-03-05T08:12:50.728Z"
+  },
+  {
+    "id": "log_1772698252644",
+    "action": "user_register",
+    "userId": "user_a8f7aecbb1",
+    "meta": {
+      "email": "demo@snapyform.com"
+    },
+    "timestamp": "2026-03-05T08:10:52.645Z"
+  }
+]

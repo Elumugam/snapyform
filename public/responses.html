@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responses – SnapyForm</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="/js/api.js"></script>
+    <script src="/js/ai.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .response-row {
+            display: grid;
+            grid-template-columns: 40px 3fr 1fr 1fr 100px;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: var(--transition)
+        }
+
+        .response-row:hover {
+            background: var(--surface-2)
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .7);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            backdrop-filter: blur(2px)
+        }
+
+        .modal-backdrop.open {
+            display: flex
+        }
+
+        .field-answer {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .field-answer:last-child {
+            border-bottom: none
+        }
+
+        .ai-insight-card {
+            padding: 16px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            margin-bottom: 12px
+        }
+
+        .sentiment-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: var(--surface-3);
+            overflow: hidden;
+            margin-top: 8px
+        }
+
+        .sentiment-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--red), var(--yellow), var(--green))
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo" onclick="window.location='/'">
+                <div class="logo-mark">S</div><span class="logo-text">SnapyForm</span>
+            </div>
+            <div class="sidebar-section">
+                <div class="nav-item" onclick="window.location='/dashboard'">
+                    <div class="nav-icon-wrap">⊞</div><span>Dashboard</span>
+                </div>
+                <div class="nav-item active">
+                    <div class="nav-icon-wrap">≡</div><span>Responses</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/export'">
+                    <div class="nav-icon-wrap">↓</div><span>Export</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/settings'">
+                    <div class="nav-icon-wrap">◎</div><span>Settings</span>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-widget">
+                    <div class="user-avatar" id="uAvatar">?</div>
+                    <div>
+                        <div class="user-name" id="uName">...</div>
+                    </div><span style="margin-left:auto;font-size:13px;color:var(--text-4);cursor:pointer"
+                        onclick="DocmoAPI.logout()">⏻</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="page-shell">
+                <div class="breadcrumb"><a href="/dashboard">Dashboard</a><span
+                        class="breadcrumb-sep">/</span><span>Responses</span></div>
+                <div class="page-header">
+                    <div>
+                        <div class="page-title" id="pageTitle">Responses</div>
+                        <div class="page-subtitle" id="pageSub">Select a form to view responses</div>
+                    </div>
+                    <div class="flex gap-8">
+                        <select class="input" id="formSelect" onchange="switchForm(this.value)"
+                            style="width:240px"></select>
+                        <a href="/export" class="btn btn-secondary" id="exportBtn" style="display:none">Export ↓</a>
+                        <button class="btn btn-primary" id="aiAnalyzeBtn" style="display:none"
+                            onclick="runAIAnalysis()">AI Analysis</button>
+                    </div>
+                </div>
+                <div id="pageContent"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- RESPONSE DETAIL MODAL -->
+    <div class="modal-backdrop" id="respModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Response Detail</div>
+                <div class="flex gap-8"><button class="btn btn-danger btn-sm" id="delRespBtn">Delete</button><button
+                        class="btn btn-ghost btn-icon btn-sm"
+                        onclick="document.getElementById('respModal').classList.remove('open')">✕</button></div>
+            </div>
+            <div class="modal-body" id="respModalBody"></div>
+        </div>
+    </div>
+
+    <!-- AI ANALYSIS MODAL -->
+    <div class="modal-backdrop" id="aiModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-lg" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">AI Analysis <span class="badge badge-accent">OpenAI</span></div><button
+                    class="btn btn-ghost btn-icon btn-sm"
+                    onclick="document.getElementById('aiModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="modal-body" id="aiModalBody">
+                <div style="text-align:center;padding:40px;color:var(--text-3)">Analyzing responses...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const p = new URLSearchParams(location.search);
+        let currentFormId = p.get('id'), allForms = [], allResponses = [], currentForm = null;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!DocmoAPI.requireAuth()) return;
+            const u = await DocmoAPI.getMe(); if (u) { document.getElementById('uAvatar').textContent = u.avatar || '?'; document.getElementById('uName').textContent = u.name || 'User'; }
+            allForms = await DocmoAPI.getForms().catch(() => []);
+            const sel = document.getElementById('formSelect');
+            sel.innerHTML = '<option value="">— Select a form —</option>' + allForms.map(f => `<option value="${f.id}"${f.id === currentFormId ? ' selected' : ''}>${DocmoAPI.escH(f.title)} (${f.responseCount || 0})</option>`).join('');
+            if (currentFormId) await loadSingleForm(currentFormId);
+            else showFormSelector();
+        });
+
+        function showFormSelector() {
+            document.getElementById('pageContent').innerHTML = `<div class="empty-state"><div class="empty-icon">≡</div><div class="empty-title">Select a form to view responses</div><div class="empty-desc">Use the dropdown above to select a form and see its responses, analytics, and insights.</div></div>`;
+        }
+
+        async function switchForm(id) {
+            currentFormId = id;
+            if (id) { history.pushState({}, '', '/responses?id=' + id); await loadSingleForm(id); }
+            else { history.pushState({}, '', '/responses'); showFormSelector(); }
+        }
+
+        async function loadSingleForm(id) {
+            document.getElementById('pageContent').innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-3)">Loading...</div>';
+            try {
+                [currentForm, allResponses] = await Promise.all([DocmoAPI.getForm(id), DocmoAPI.getResponses(id)]);
+                document.getElementById('pageTitle').textContent = currentForm.title;
+                document.getElementById('pageSub').textContent = allResponses.length + ' total responses';
+                document.getElementById('exportBtn').href = '/export?id=' + id;
+                document.getElementById('exportBtn').style.display = '';
+                document.getElementById('aiAnalyzeBtn').style.display = allResponses.length > 0 ? '' : 'none';
+                renderDashboard();
+            } catch (e) { document.getElementById('pageContent').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-title">Error loading responses</div><div class="empty-desc">${DocmoAPI.escH(e.message)}</div></div>`; }
+        }
+
+        function renderDashboard() {
+            const r = allResponses, today = r.filter(x => (Date.now() - new Date(x.submittedAt)) < 86400000).length;
+            document.getElementById('pageContent').innerHTML = `
+      <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
+        <div class="card stat-card"><div class="stat-label">Total Responses</div><div class="stat-value">${r.length}</div></div>
+        <div class="card stat-card"><div class="stat-label">Today</div><div class="stat-value">${today}</div></div>
+        <div class="card stat-card"><div class="stat-label">This Week</div><div class="stat-value">${r.filter(x => (Date.now() - new Date(x.submittedAt)) < 7 * 86400000).length}</div></div>
+        <div class="card stat-card"><div class="stat-label">Avg. Time</div><div class="stat-value" style="font-size:18px">${r.length ? Math.round(r.reduce((s, x) => s + (x.timeTakenSec || 90), 0) / r.length / 60) + 'm' : '—'}</div></div>
+      </div>
+      <div class="charts-grid-2 mb-20" id="chartsArea"></div>
+      <div class="card mb-20" id="fieldStatsCard">
+        <div class="card-header"><div class="card-title">Field Statistics</div></div>
+        <div class="card-body" id="fieldStats"></div>
+      </div>
+      <div class="card" id="responsesCard">
+        <div class="card-header">
+          <div class="card-title">All Responses <span class="badge badge-gray">${r.length}</span></div>
+          <div class="flex gap-8"><input class="input" id="srch" placeholder="Search..." style="width:200px;padding:5px 10px;font-size:12.5px" oninput="renderTable(this.value)"><button class="btn btn-danger btn-sm" onclick="clearAll()">Clear All</button></div>
+        </div>
+        <div class="response-row" style="cursor:default;border-bottom:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">#</div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Response Preview</div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Submitted</div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">Duration</div>
+          <div></div>
+        </div>
+        <div id="respTable"></div>
+      </div>`;
+            renderCharts(); renderFieldStats(); renderTable('');
+        }
+
+        function renderCharts() {
+            if (!allResponses.length) { document.getElementById('chartsArea').innerHTML = ''; return; }
+            const chartOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#71717a', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#71717a', stepSize: 1, font: { size: 11 } } } } };
+            document.getElementById('chartsArea').innerHTML = `<div class="card chart-card"><div class="chart-title">Daily Submissions (7 days)</div><div class="chart-wrap-200"><canvas id="barC"></canvas></div></div><div class="card chart-card"><div class="chart-title">Cumulative Responses</div><div class="chart-wrap-200"><canvas id="lineC"></canvas></div></div>`;
+            const days = [], counts = []; for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(d.toLocaleDateString('en', { weekday: 'short' })); counts.push(allResponses.filter(x => new Date(x.submittedAt).toDateString() === d.toDateString()).length); }
+            new Chart(document.getElementById('barC'), { type: 'bar', data: { labels: days, datasets: [{ data: counts, backgroundColor: 'rgba(99,102,241,0.7)', borderRadius: 5 }] }, options: chartOpts });
+            const sorted = [...allResponses].sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt)); let cum = 0; const lD = sorted.map(x => { cum++; return new Date(x.submittedAt).toLocaleDateString('en', { month: 'short', day: 'numeric' }); }); cum = 0; const lV = sorted.map(() => ++cum);
+            new Chart(document.getElementById('lineC'), { type: 'line', data: { labels: lD, datasets: [{ data: lV, borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.08)', fill: true, tension: .4, pointRadius: 2 }] }, options: { ...chartOpts } });
+        }
+
+        function renderFieldStats() {
+            const fields = currentForm.fields || [], area = document.getElementById('fieldStats');
+            if (!fields.length) { area.innerHTML = '<div style="text-align:center;color:var(--text-4);padding:20px">No fields</div>'; return; }
+            area.innerHTML = fields.filter(f => !['heading', 'divider'].includes(f.type)).map(f => {
+                const ans = allResponses.map(x => x.data?.[f.label]).filter(Boolean); const pct = allResponses.length ? Math.round(ans.length / allResponses.length * 100) : 0;
+                let extra = '';
+                if (f.type === 'rating' && ans.length) { const avg = (ans.map(Number).reduce((a, b) => a + b, 0) / ans.length).toFixed(1); extra = `<span class="badge badge-yellow" style="margin-left:8px">★ ${avg}/5</span>`; }
+                if (['radio', 'dropdown'].includes(f.type) && ans.length) { const counts = {}; ans.forEach(a => { counts[a] = (counts[a] || 0) + 1; }); extra = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">' + Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `<span class="badge badge-gray">${DocmoAPI.escH(k)}: ${v}</span>`).join('') + '</div>'; }
+                return `<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="font-size:13px;font-weight:600">${DocmoAPI.escH(f.label)}<span class="badge badge-gray" style="margin-left:6px;vertical-align:middle">${f.type}</span>${extra}</div><div style="font-size:13px;font-weight:700;color:var(--accent)">${pct}%</div></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div><div style="font-size:11.5px;color:var(--text-4);margin-top:4px">${ans.length} of ${allResponses.length} answered</div></div>`;
+            }).join('');
+        }
+
+        function renderTable(q) {
+            const filt = allResponses.filter(x => !q || JSON.stringify(x.data || {}).toLowerCase().includes(q.toLowerCase()));
+            const fields = (currentForm.fields || []).filter(f => !['heading', 'divider'].includes(f.type)).slice(0, 2);
+            const t = document.getElementById('respTable');
+            if (!filt.length) { t.innerHTML = '<div class="empty-state" style="padding:32px"><div class="empty-desc">No responses found</div></div>'; return; }
+            t.innerHTML = filt.map((r, i) => `<div class="response-row" onclick="viewResp('${r.id}')"><div style="font-size:12px;color:var(--text-4)">${i + 1}</div><div>${fields.map(f => `<div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px">${DocmoAPI.escH(String(r.data?.[f.label] || '—'))}</div>`).join('')}</div><div style="font-size:12px;color:var(--text-3)">${DocmoAPI.relTime(r.submittedAt)}</div><div style="font-size:12px;color:var(--text-3)">${r.timeTakenSec ? Math.round(r.timeTakenSec / 60) + 'm' : '—'}</div><div onclick="event.stopPropagation()" class="flex gap-4"><button class="btn btn-ghost btn-sm" onclick="viewResp('${r.id}')">View</button><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="delResp('${r.id}')">✕</button></div></div>`).join('');
+        }
+
+        function viewResp(id) {
+            const r = allResponses.find(x => x.id === id); if (!r) return; const f = currentForm.fields || []; document.getElementById('respModalBody').innerHTML = `<div style="font-size:12px;color:var(--text-3);margin-bottom:16px">Submitted ${DocmoAPI.relTime(r.submittedAt)}</div>` + f.filter(f => !['heading', 'divider'].includes(f.type)).map(fi => `<div class="field-answer"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-4);margin-bottom:5px">${DocmoAPI.escH(fi.label)}</div><div style="font-size:13.5px;color:var(--text)">${fi.type === 'rating' ? '★'.repeat(Number(r.data?.[fi.label]) || 0) + '☆'.repeat(5 - Math.min(5, Number(r.data?.[fi.label]) || 0)) + ` (${r.data?.[fi.label]}/5)` : DocmoAPI.escH(String(r.data?.[fi.label] || '—'))}</div></div>`).join('');
+            document.getElementById('delRespBtn').onclick = () => { delResp(id); document.getElementById('respModal').classList.remove('open'); };
+            document.getElementById('respModal').classList.add('open');
+        }
+
+        async function delResp(id) { if (!confirm('Delete this response?')) return; try { await DocmoAPI.deleteResponse(id); allResponses = allResponses.filter(r => r.id !== id); document.getElementById('pageSub').textContent = allResponses.length + ' total responses'; renderDashboard(); } catch (e) { toast(e.message, 'error'); } }
+        async function clearAll() { if (!confirm('Delete ALL ' + allResponses.length + ' responses? Cannot be undone.')) return; try { await DocmoAPI.clearResponses(currentFormId); allResponses = []; renderDashboard(); toast('All responses cleared', 'success'); } catch (e) { toast(e.message, 'error'); } }
+
+        async function runAIAnalysis() {
+            const modal = document.getElementById('aiModal'); modal.classList.add('open');
+            document.getElementById('aiModalBody').innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-3)"><div style="font-size:28px;margin-bottom:12px">◌</div>Analyzing ' + allResponses.length + ' responses with OpenAI...</div>';
+            try {
+                const r = await DocmoAI.analyzeResponses(currentForm.title, allResponses); document.getElementById('aiModalBody').innerHTML = `
+      <div class="ai-insight-card" style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:8px">Summary</div><div style="font-size:13.5px;line-height:1.7">${DocmoAPI.escH(r.summary || '')}</div></div>
+      <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0;margin-bottom:16px">
+        <div class="ai-insight-card"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:8px">Sentiment Score</div><div style="font-size:28px;font-weight:700">${r.sentimentScore || 0}<span style="font-size:14px;color:var(--text-3)">/100</span></div><div class="sentiment-bar"><div class="sentiment-fill" style="width:${r.sentimentScore || 0}%"></div></div></div>
+        <div class="ai-insight-card"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:8px">Common Themes</div>${(r.commonThemes || []).map(t => `<span class="badge badge-gray" style="margin:2px">${DocmoAPI.escH(t)}</span>`).join('')}</div>
+      </div>
+      ${r.insights?.length ? `<div class="ai-insight-card" style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:8px">Key Insights</div>${r.insights.map(i => `<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-2);display:flex;gap:8px"><span style="color:var(--accent);flex-shrink:0">→</span>${DocmoAPI.escH(i)}</div>`).join('')}</div>` : ''}
+      ${r.recommendations?.length ? `<div class="ai-insight-card"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:8px">Recommendations</div>${r.recommendations.map(i => `<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-2);display:flex;gap:8px"><span style="color:var(--green);flex-shrink:0">✓</span>${DocmoAPI.escH(i)}</div>`).join('')}</div>` : ''}`;
+            } catch (e) { document.getElementById('aiModalBody').innerHTML = `<div style="text-align:center;padding:40px;color:var(--red)">AI analysis failed: ${DocmoAPI.escH(e.message)}</div>`; }
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open')); });
+    </script>
+</body>
+
+</html>

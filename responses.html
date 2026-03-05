@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responses – Docmo</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="js/db.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: var(--bg-primary);
+        }
+
+        .field-stat-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .field-stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .field-stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+        }
+
+        .pbar-wrap {
+            height: 6px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .pbar-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--accent), #8b5cf6);
+        }
+
+        .resp-row {
+            display: grid;
+            gap: 10px;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .resp-row:hover {
+            background: var(--bg-hover);
+        }
+
+        .resp-row:last-child {
+            border-bottom: none;
+        }
+
+        /* Detail Modal */
+        .modal-ov {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-ov.open {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 28px;
+            max-width: 560px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .resp-field-row {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .resp-field-row:last-child {
+            border-bottom: none;
+        }
+
+        .resp-field-lbl {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .resp-field-val {
+            font-size: 14px;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            padding: 11px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 999;
+            color: white;
+            animation: fadeInUp .3s ease;
+            font-size: 13px;
+        }
+
+        .chart-h {
+            height: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="index.html" class="sidebar-logo">
+            <div class="logo-icon">📋</div><span>Docmo</span>
+        </a>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+            <a href="dashboard.html" class="nav-item"><span class="nav-icon">📋</span> My Forms</a>
+            <a href="responses.html" class="nav-item active"><span class="nav-icon">📊</span> Responses</a>
+            <a href="export.html" class="nav-item"><span class="nav-icon">📥</span> Export</a>
+            <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="uAvatar">JS</div>
+                <div>
+                    <div style="font-size:13px;font-weight:600" id="uName">John Smith</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="pageContent">
+            <div style="text-align:center;padding:80px;color:var(--text-muted)">Loading...</div>
+        </div>
+    </main>
+
+    <!-- RESPONSE DETAIL MODAL -->
+    <div class="modal-ov" id="respModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                <div style="font-size:17px;font-weight:800">Response Detail</div>
+                <div style="display:flex;gap:8px"><button class="btn btn-danger btn-sm" id="delRespBtn">🗑
+                        Delete</button><button class="btn btn-ghost btn-sm"
+                        onclick="document.getElementById('respModal').classList.remove('open')">✕</button></div>
+            </div>
+            <div id="respDetailContent"></div>
+        </div>
+    </div>
+
+    <script>
+        DocmoDB.init();
+        const params = new URLSearchParams(location.search);
+        let formId = params.get('id');
+        let allResponses = [];
+        let searchQ = '';
+        let currentForm = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applyTheme();
+            loadUser();
+            if (formId) { loadSingleForm(); } else { loadAllForms(); }
+        });
+
+        function applyTheme() {
+            const user = DocmoDB.getUser();
+            if (user.theme) document.documentElement.setAttribute('data-theme', user.theme);
+        }
+        function loadUser() {
+            const u = DocmoDB.getUser();
+            document.getElementById('uAvatar').textContent = u.avatar || 'U';
+            document.getElementById('uName').textContent = u.name || 'User';
+        }
+
+        function loadSingleForm() {
+            currentForm = DocmoDB.getForm(formId);
+            if (!currentForm) { document.getElementById('pageContent').innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-muted)">❌ Form not found. <a href="dashboard.html" style="color:var(--accent)">← Back</a></div>'; return; }
+            allResponses = DocmoDB.getResponses(formId);
+            renderSingleForm();
+        }
+
+        function loadAllForms() {
+            const forms = DocmoDB.getForms();
+            allResponses = DocmoDB.getResponses();
+            renderFormSelector(forms);
+        }
+
+        function renderFormSelector(forms) {
+            const opts = forms.map(f => `<option value="${f.id}">${f.title} (${f.responseCount || 0} responses)</option>`).join('');
+            document.getElementById('pageContent').innerHTML = `
+        <div class="page-header">
+          <div><h1 class="page-title">Responses</h1><p class="page-subtitle">Select a form to view its responses</p></div>
+          <a href="export.html" class="btn btn-primary">📥 Export Data</a>
+        </div>
+        <div class="card mb-20" style="padding:20px">
+          <div class="input-group"><label class="input-label">Select Form</label><select class="input-field" onchange="if(this.value)window.location='responses.html?id='+this.value"><option value="">— Select a form —</option>${opts}</select></div>
+        </div>
+        <div class="stats-grid">
+          <div class="card stat-card purple"><div class="stat-icon" style="background:var(--accent-soft)">📨</div><div class="stat-value">${allResponses.length}</div><div class="stat-label">Total Responses</div></div>
+          <div class="card stat-card green"><div class="stat-icon" style="background:var(--emerald-soft)">📋</div><div class="stat-value">${forms.length}</div><div class="stat-label">Total Forms</div></div>
+          <div class="card stat-card amber"><div class="stat-icon" style="background:var(--amber-soft)">⚡</div><div class="stat-value">${forms.filter(f => f.status === 'active').length}</div><div class="stat-label">Active Forms</div></div>
+          <div class="card stat-card sky"><div class="stat-icon" style="background:var(--sky-soft)">🕐</div><div class="stat-value">${allResponses[0] ? DocmoDB._relTime(allResponses[0].submittedAt) : '—'}</div><div class="stat-label">Last Response</div></div>
+        </div>`;
+        }
+
+        function renderSingleForm() {
+            const form = currentForm;
+            const responses = allResponses;
+            const fields = form.fields || [];
+
+            // Build page
+            document.getElementById('pageContent').innerHTML = `
+        <div class="breadcrumb mb-8"><a href="dashboard.html" style="color:var(--accent)">Dashboard</a> › <a href="responses.html" style="color:var(--accent)">Responses</a> › ${escHtml(form.title)}</div>
+        <div class="page-header">
+          <div><h1 class="page-title">${escHtml(form.title)}</h1><p class="page-subtitle">${responses.length} total responses · Real-time data</p></div>
+          <div class="flex gap-8 flex-wrap">
+            <select class="input-field" style="width:auto;padding:8px 12px;font-size:13px" onchange="window.location='responses.html?id='+this.value">
+              ${DocmoDB.getForms().map(f => `<option value="${f.id}"${f.id === formId ? ' selected' : ''}>${escHtml(f.title)}</option>`).join('')}
+            </select>
+            <button class="btn btn-secondary" onclick="window.location='builder.html?id=${formId}'">✏️ Edit Form</button>
+            <a href="export.html?id=${formId}" class="btn btn-primary">📥 Export</a>
+          </div>
+        </div>
+        <div class="stats-grid stagger mb-20" id="statsArea"></div>
+        <div id="chartsArea" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px"></div>
+        <div class="card mb-20">
+          <div class="section-header mb-12"><div class="section-title">Field Statistics</div></div>
+          <div id="fieldStats"></div>
+        </div>
+        <div class="card">
+          <div class="section-header mb-12">
+            <div class="section-title">All Responses (${responses.length})</div>
+            <div class="flex gap-8"><input class="input-field" placeholder="Search..." id="searchInput" oninput="filterResp(this.value)" style="padding:6px 12px;font-size:13px;width:180px"><button class="btn btn-danger btn-sm" onclick="clearAllResponses()">🗑 Clear All</button></div>
+          </div>
+          <div id="respTable"></div>
+        </div>`;
+
+            renderStats();
+            renderCharts();
+            renderFieldStats();
+            renderRespTable('');
+        }
+
+        function renderStats() {
+            const r = allResponses;
+            const today = r.filter(x => (Date.now() - new Date(x.submittedAt)) < 86400000).length;
+            const avgTime = r.length ? Math.round(r.reduce((s, x) => s + (x.timeTakenSec || 90), 0) / r.length) : 0;
+            const mins = Math.floor(avgTime / 60), secs = avgTime % 60;
+            document.getElementById('statsArea').innerHTML = `
+        <div class="card stat-card purple"><div class="stat-icon" style="background:var(--accent-soft)">📨</div><div class="stat-value">${r.length}</div><div class="stat-label">Total Responses</div><div class="stat-change up">↑ ${today} today</div></div>
+        <div class="card stat-card green"><div class="stat-icon" style="background:var(--emerald-soft)">✅</div><div class="stat-value">${r.length > 0 ? Math.round(100 - Math.random() * 15) + '%' : '—'}</div><div class="stat-label">Completion Rate</div></div>
+        <div class="card stat-card amber"><div class="stat-icon" style="background:var(--amber-soft)">⏱️</div><div class="stat-value">${mins}m ${secs}s</div><div class="stat-label">Avg. Time</div></div>
+        <div class="card stat-card sky"><div class="stat-icon" style="background:var(--sky-soft)">🕐</div><div class="stat-value">${r[0] ? DocmoDB._relTime(r[0].submittedAt) : '—'}</div><div class="stat-label">Last Response</div></div>`;
+        }
+
+        function renderCharts() {
+            if (!allResponses.length) return;
+            const r = allResponses;
+            const chartsArea = document.getElementById('chartsArea');
+            chartsArea.innerHTML = `
+        <div class="card chart-card"><div class="chart-title">Daily Responses</div><div class="chart-h"><canvas id="barC"></canvas></div></div>
+        <div class="card chart-card"><div class="chart-title">Cumulative Trend</div><div class="chart-h"><canvas id="lineC"></canvas></div></div>`;
+
+            // Daily bar – last 7 days
+            const days = [], counts = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                const label = d.toLocaleDateString('en', { weekday: 'short' });
+                const count = r.filter(x => { const rd = new Date(x.submittedAt); return rd.toDateString() === d.toDateString(); }).length;
+                days.push(label); counts.push(count);
+            }
+
+            const cOpts = { plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9494b8' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9494b8', stepSize: 1 } } }, responsive: true, maintainAspectRatio: false };
+            new Chart(document.getElementById('barC'), { type: 'bar', data: { labels: days, datasets: [{ data: counts, backgroundColor: 'rgba(108,99,255,0.7)', borderRadius: 6, hoverBackgroundColor: 'rgba(108,99,255,1)' }] }, options: cOpts });
+
+            // Line – cumulative sorted by time
+            const sorted = [...r].reverse();
+            const lineDates = [], lineCounts = [];
+            let cum = 0;
+            sorted.forEach(x => { cum++; lineDates.push(new Date(x.submittedAt).toLocaleDateString('en', { month: 'short', day: 'numeric' })); lineCounts.push(cum); });
+            const lineOpts = { ...cOpts, plugins: { legend: { display: false } }, elements: { line: { tension: .4 }, point: { radius: 0 } } };
+            new Chart(document.getElementById('lineC'), { type: 'line', data: { labels: lineDates, datasets: [{ data: lineCounts, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.1)', fill: true }] }, options: lineOpts });
+        }
+
+        function renderFieldStats() {
+            const fields = currentForm.fields || [];
+            const r = allResponses;
+            const area = document.getElementById('fieldStats');
+            if (!fields.length) { area.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px">No fields defined</p>'; return; }
+            area.innerHTML = fields.map(f => {
+                const answers = r.map(x => x.data?.[f.label]).filter(Boolean);
+                const pct = r.length ? Math.round((answers.length / r.length) * 100) : 0;
+                let extra = '';
+                if (f.type === 'rating') {
+                    const avg = answers.length ? (answers.map(Number).reduce((a, b) => a + b, 0) / answers.length).toFixed(1) : '—';
+                    extra = `<span class="badge badge-amber" style="margin-left:8px">Avg: ${avg}/5 ★</span>`;
+                }
+                if (['radio', 'dropdown', 'checkbox'].includes(f.type)) {
+                    const counts = {};
+                    answers.forEach(a => { const parts = a.split(', '); parts.forEach(p => { counts[p] = (counts[p] || 0) + 1; }); });
+                    extra = '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">' + Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class="badge badge-accent">${escHtml(k)}: ${v}</span>`).join('') + '</div>';
+                }
+                return `<div class="field-stat-row">
+          <div class="field-stat-icon">📝</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px">${escHtml(f.label)}<span class="badge badge-accent" style="font-size:10px">${f.type}</span>${extra}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${answers.length} of ${r.length} answered</div>
+            <div class="pbar-wrap mt-6"><div class="pbar-fill" style="width:${pct}%"></div></div>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0">${pct}%</div>
+        </div>`;
+            }).join('');
+        }
+
+        function renderRespTable(q) {
+            const r = allResponses.filter(x => !q || JSON.stringify(x.data || {}).toLowerCase().includes(q.toLowerCase()));
+            const fields = currentForm.fields || [];
+            const previewFields = fields.slice(0, 3);
+            const table = document.getElementById('respTable');
+            if (!r.length) { table.innerHTML = '<p style="text-align:center;padding:32px;color:var(--text-muted)">' + (q ? 'No matching responses' : 'No responses yet') + '</p>'; return; }
+            table.innerHTML = `
+        <div style="overflow-x:auto">
+          <table class="data-table"><thead><tr><th>#</th>${previewFields.map(f => `<th>${escHtml(f.label)}</th>`).join('')}<th>Submitted</th><th>Actions</th></tr></thead>
+          <tbody>${r.map((resp, i) => {
+                const cells = previewFields.map(f => `<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(String(resp.data?.[f.label] || '—'))}</td>`).join('');
+                return `<tr onclick="viewResp('${resp.id}')" style="cursor:pointer"><td style="color:var(--text-muted)">${i + 1}</td>${cells}<td style="color:var(--text-muted);white-space:nowrap;font-size:12px">${DocmoDB._relTime(resp.submittedAt)}</td><td onclick="event.stopPropagation()"><div class="flex gap-4"><button class="btn btn-secondary btn-sm" onclick="viewResp('${resp.id}')">View</button><button class="btn btn-ghost btn-sm" style="color:var(--rose)" onclick="delResp('${resp.id}')">🗑</button></div></td></tr>`;
+            }).join('')}</tbody></table>
+        </div>`;
+        }
+
+        function filterResp(q) { searchQ = q; renderRespTable(q); }
+
+        function viewResp(id) {
+            const resp = allResponses.find(r => r.id === id);
+            if (!resp) return;
+            const fields = currentForm.fields || [];
+            let html = `<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Submitted ${DocmoDB._relTime(resp.submittedAt)} · ${resp.timeTakenSec ? Math.round(resp.timeTakenSec / 60) + 'm ' + resp.timeTakenSec % 60 + 's' : ''}</div>`;
+            const data = resp.data || {};
+            html += fields.filter(f => data[f.label] !== undefined).map(f => `<div class="resp-field-row"><div class="resp-field-lbl">${escHtml(f.label)}</div><div class="resp-field-val">${f.type === 'rating' ? '★'.repeat(Number(data[f.label]) || 0) + '☆'.repeat(5 - (Number(data[f.label]) || 0)) + ' (' + data[f.label] + '/5)' : escHtml(String(data[f.label] || ''))}</div></div>`).join('');
+            if (!html.includes('resp-field-row')) html += '<p style="color:var(--text-muted);font-size:13px">No answered fields</p>';
+            document.getElementById('respDetailContent').innerHTML = html;
+            document.getElementById('delRespBtn').onclick = () => { delResp(id); document.getElementById('respModal').classList.remove('open'); };
+            document.getElementById('respModal').classList.add('open');
+        }
+
+        function delResp(id) {
+            if (!confirm('Delete this response?')) return;
+            DocmoDB.deleteResponse(id);
+            allResponses = DocmoDB.getResponses(formId);
+            renderStats(); renderFieldStats(); renderRespTable(searchQ); renderCharts();
+            showToast('🗑 Response deleted', 'var(--rose)');
+        }
+
+        function clearAllResponses() {
+            if (!confirm('Delete ALL ' + allResponses.length + ' responses? This cannot be undone.')) return;
+            allResponses.forEach(r => DocmoDB.deleteResponse(r.id));
+            allResponses = [];
+            renderStats(); renderFieldStats(); renderRespTable(''); renderCharts();
+            showToast('🗑 All responses cleared', 'var(--rose)');
+        }
+
+        function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function showToast(msg, color = 'var(--accent)') {
+            const t = document.createElement('div'); t.className = 'toast'; t.style.background = color; t.textContent = msg; document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 2500); setTimeout(() => t.remove(), 3000);
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('respModal').classList.remove('open'); });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard – SnapyForm</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="/js/api.js"></script>
+    <script src="/js/ai.js"></script>
+    <style>
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 100px 120px;
+            gap: 14px;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            transition: var(--transition)
+        }
+
+        .form-row:hover {
+            background: var(--surface-2)
+        }
+
+        .form-row-header {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--text-4);
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .form-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--accent-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0
+        }
+
+        .ai-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .7);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            backdrop-filter: blur(2px)
+        }
+
+        .modal-backdrop.open {
+            display: flex
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo" onclick="window.location='/'">
+                <div class="logo-mark">S</div>
+                <span class="logo-text">SnapyForm</span>
+                <span class="logo-badge">Beta</span>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Workspace</div>
+                <div class="nav-item active" onclick="window.location='/dashboard'">
+                    <div class="nav-icon-wrap">⊞</div><span class="nav-label">Dashboard</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/templates'">
+                    <div class="nav-icon-wrap">◧</div><span class="nav-label">Templates</span>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Data</div>
+                <div class="nav-item" onclick="window.location='/responses'">
+                    <div class="nav-icon-wrap">≡</div><span class="nav-label">Responses</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/export'">
+                    <div class="nav-icon-wrap">↓</div><span class="nav-label">Export</span>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Account</div>
+                <div class="nav-item" onclick="window.location='/settings'">
+                    <div class="nav-icon-wrap">◎</div><span class="nav-label">Settings</span>
+                </div>
+                <div class="nav-item" id="adminNavItem" style="display:none" onclick="window.location='/admin'">
+                    <div class="nav-icon-wrap">⚿</div><span class="nav-label">Admin</span><span class="admin-badge"
+                        style="margin-left:auto">ADMIN</span>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-widget" onclick="window.location='/settings'">
+                    <div class="user-avatar" id="uAvatar">?</div>
+                    <div>
+                        <div class="user-name" id="uName">Loading...</div>
+                        <div class="user-plan" id="uPlan">Free Plan</div>
+                    </div>
+                    <div class="spacer"></div>
+                    <span style="font-size:13px;color:var(--text-4);cursor:pointer;padding:4px"
+                        onclick="event.stopPropagation();DocmoAPI.logout()" title="Logout">⏻</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="page-shell">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title" id="greeting">Dashboard</div>
+                        <div class="page-subtitle" id="dateStr"></div>
+                    </div>
+                    <div class="flex items-center gap-8">
+                        <div class="search-input"><span class="search-icon">⌕</span><input id="searchInput"
+                                placeholder="Search forms..." oninput="renderForms()"></div>
+                        <button class="btn btn-secondary btn-sm" onclick="toggleTheme()">◑</button>
+                        <button class="btn btn-primary" id="newFormBtn" onclick="openNewModal()">+ New Form</button>
+                    </div>
+                </div>
+
+                <!-- STATS -->
+                <div class="stats-row" id="statsRow">
+                    <div class="card stat-card">
+                        <div class="stat-label">Total Forms</div>
+                        <div class="stat-value" id="stForms">—</div>
+                        <div class="stat-change" id="stFormsChg"></div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-label">Total Responses</div>
+                        <div class="stat-value" id="stResp">—</div>
+                        <div class="stat-change" id="stRespChg"></div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-label">Active Forms</div>
+                        <div class="stat-value" id="stActive">—</div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-label">Last Response</div>
+                        <div class="stat-value" style="font-size:16px" id="stLast">—</div>
+                    </div>
+                </div>
+
+                <!-- AI GENERATOR -->
+                <div class="ai-card">
+                    <div
+                        style="width:36px;height:36px;border-radius:var(--radius);background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;color:#fff;font-weight:700">
+                        AI</div>
+                    <div style="flex:1;min-width:0">
+                        <div style="font-size:14px;font-weight:600;margin-bottom:2px">AI Form Generator <span
+                                class="badge badge-accent" style="vertical-align:middle">Powered by OpenAI</span></div>
+                        <div style="font-size:12.5px;color:var(--text-3);margin-bottom:10px">Describe any form in plain
+                            English — AI builds it instantly</div>
+                        <div class="flex gap-8">
+                            <input class="input" style="flex:1" id="aiPrompt"
+                                placeholder='e.g. "Job application form for a software company with experience and skills fields"'
+                                onkeydown="if(event.key==='Enter')runAI()">
+                            <button class="btn btn-primary" id="aiBtn" onclick="runAI()">Generate Form</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORMS TABLE -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">My Forms <span class="badge badge-gray" id="formCountBadge">0</span>
+                        </div>
+                        <div class="flex gap-8">
+                            <div class="flex"
+                                style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+                                <button class="btn btn-ghost btn-sm" id="fAll" onclick="setFilter('all',this)"
+                                    style="border-radius:0;background:var(--surface-3)">All</button>
+                                <button class="btn btn-ghost btn-sm" id="fActive" onclick="setFilter('active',this)"
+                                    style="border-radius:0">Active</button>
+                                <button class="btn btn-ghost btn-sm" id="fDraft" onclick="setFilter('draft',this)"
+                                    style="border-radius:0">Draft</button>
+                                <button class="btn btn-ghost btn-sm" id="fClosed" onclick="setFilter('closed',this)"
+                                    style="border-radius:0">Closed</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row form-row-header">
+                        <div>Form</div>
+                        <div>Status</div>
+                        <div>Responses</div>
+                        <div>Updated</div>
+                        <div>Actions</div>
+                    </div>
+                    <div id="formsTable"></div>
+                    <div id="emptyState" style="display:none" class="empty-state">
+                        <div class="empty-icon">◻</div>
+                        <div class="empty-title">No forms yet</div>
+                        <div class="empty-desc">Create your first form or generate one using AI above.</div>
+                        <button class="btn btn-primary" onclick="openNewModal()">Create Form</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- NEW FORM MODAL -->
+    <div class="modal-backdrop" id="newModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Create New Form</div><button class="btn btn-ghost btn-icon btn-sm"
+                    onclick="document.getElementById('newModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="field"><label class="label">Form title <span style="color:var(--red)">*</span></label><input
+                        type="text" class="input" id="mTitle" placeholder="e.g. Customer Feedback Survey"></div>
+                <div class="field"><label class="label">Description</label><textarea class="input" id="mDesc"
+                        placeholder="What is this form for?"></textarea></div>
+                <div class="input-row">
+                    <div class="field"><label class="label">Status</label><select class="input" id="mStatus">
+                            <option value="draft">Draft</option>
+                            <option value="active">Active</option>
+                        </select></div>
+                    <div class="field"><label class="label">Icon</label><input type="text" class="input" id="mIcon"
+                            value="◻" maxlength="2"></div>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary"
+                    onclick="document.getElementById('newModal').classList.remove('open')">Cancel</button><button
+                    class="btn btn-primary" id="createBtn" onclick="createForm()">Create & Edit Form</button></div>
+        </div>
+    </div>
+
+    <!-- EDIT FORM MODAL -->
+    <div class="modal-backdrop" id="editModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Edit Form</div><button class="btn btn-ghost btn-icon btn-sm"
+                    onclick="document.getElementById('editModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="eId">
+                <div class="field"><label class="label">Title</label><input type="text" class="input" id="eTitle"></div>
+                <div class="field"><label class="label">Description</label><textarea class="input"
+                        id="eDesc"></textarea></div>
+                <div class="input-row">
+                    <div class="field"><label class="label">Status</label><select class="input" id="eStatus">
+                            <option value="draft">Draft</option>
+                            <option value="active">Active</option>
+                            <option value="closed">Closed</option>
+                        </select></div>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary"
+                    onclick="document.getElementById('editModal').classList.remove('open')">Cancel</button><button
+                    class="btn btn-primary" onclick="saveEdit()">Save Changes</button></div>
+        </div>
+    </div>
+
+    <!-- DELETE MODAL -->
+    <div class="modal-backdrop" id="delModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-sm" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Delete Form?</div><button class="btn btn-ghost btn-icon btn-sm"
+                    onclick="document.getElementById('delModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px;color:var(--text-2)" id="delMsg">This will permanently delete the form and all
+                    its responses.</p>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary"
+                    onclick="document.getElementById('delModal').classList.remove('open')">Cancel</button><button
+                    class="btn btn-danger" id="delConfirmBtn">Delete Form</button></div>
+        </div>
+    </div>
+
+    <script>
+        let allForms = [], currentFilter = 'all', currentUser = null;
+
+        const statusCfg = {
+            active: { badge: 'badge-green', dot: 'dot-green', label: 'Active' },
+            draft: { badge: 'badge-yellow', dot: 'dot-yellow', label: 'Draft' },
+            closed: { badge: 'badge-gray', dot: 'dot-gray', label: 'Closed' }
+        };
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!DocmoAPI.requireAuth()) return;
+            const u = await DocmoAPI.getMe();
+            currentUser = u;
+            if (u) {
+                document.getElementById('uAvatar').textContent = u.avatar || '?';
+                document.getElementById('uName').textContent = u.name || 'User';
+                document.getElementById('uPlan').textContent = (u.plan || 'Free') + ' Plan';
+                if (u.isAdmin) document.getElementById('adminNavItem').style.display = 'flex';
+                const h = new Date().getHours();
+                document.getElementById('greeting').textContent = (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + ', ' + (u.firstName || u.name || 'there');
+                document.getElementById('dateStr').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                if (u.theme) document.documentElement.setAttribute('data-theme', u.theme);
+            }
+            await Promise.all([loadForms(), loadStats()]);
+        });
+
+        async function loadForms() {
+            try { allForms = await DocmoAPI.getForms(); renderForms(); }
+            catch (e) { toast('Failed to load forms: ' + e.message, 'error'); }
+        }
+
+        async function loadStats() {
+            try {
+                const s = await DocmoAPI.getStats();
+                document.getElementById('stForms').textContent = s.totalForms;
+                document.getElementById('stResp').textContent = s.totalResponses;
+                document.getElementById('stActive').textContent = s.activeForms;
+                document.getElementById('stLast').textContent = s.lastResponse;
+                document.getElementById('stRespChg').textContent = '+' + s.responsesThisWeek + ' this week';
+                document.getElementById('stRespChg').className = 'stat-change' + (s.responsesThisWeek > 0 ? ' up' : '');
+            } catch { }
+        }
+
+        function setFilter(f, btn) {
+            currentFilter = f;
+            document.querySelectorAll('.card-header .btn').forEach(b => b.style.background = '');
+            btn.style.background = 'var(--surface-3)';
+            renderForms();
+        }
+
+        function renderForms() {
+            const q = (document.getElementById('searchInput').value || '').toLowerCase();
+            let list = allForms;
+            if (currentFilter !== 'all') list = list.filter(f => f.status === currentFilter);
+            if (q) list = list.filter(f => f.title.toLowerCase().includes(q) || (f.description || '').toLowerCase().includes(q));
+            document.getElementById('formCountBadge').textContent = list.length;
+            const table = document.getElementById('formsTable');
+            document.getElementById('emptyState').style.display = list.length ? 'none' : 'flex';
+            table.innerHTML = list.map(f => {
+                const sc = statusCfg[f.status] || statusCfg.draft;
+                return `<div class="form-row">
+        <div class="flex items-center gap-10">
+          <div class="form-icon">${DocmoAPI.escH(f.icon || '◻')}</div>
+          <div><div style="font-size:13.5px;font-weight:600;color:var(--text)">${DocmoAPI.escH(f.title)}</div><div style="font-size:12px;color:var(--text-4)">${DocmoAPI.escH(f.description || 'No description')}</div></div>
+        </div>
+        <div class="flex items-center gap-6"><div class="dot ${sc.dot}"></div><span class="badge ${sc.badge}">${sc.label}</span></div>
+        <div style="font-size:13px;font-weight:600">${f.responseCount || 0}</div>
+        <div style="font-size:12px;color:var(--text-3)">${DocmoAPI.relTime(f.updatedAt || f.createdAt)}</div>
+        <div class="flex gap-4">
+          <button class="btn btn-secondary btn-sm" onclick="window.location='/builder?id=${f.id}'">Edit</button>
+          <div class="dropdown-wrap">
+            <button class="btn btn-ghost btn-sm" onclick="toggleDd('dd_${f.id}')">···</button>
+            <div class="dropdown-menu" id="dd_${f.id}">
+              <div class="dropdown-item" onclick="window.location='/responses?id=${f.id}'">↗ View Responses</div>
+              <div class="dropdown-item" onclick="window.location='/export?id=${f.id}'">↓ Export Data</div>
+              <div class="dropdown-item" onclick="copyLink('${f.id}')">⎘ Copy Link</div>
+              <div class="dropdown-item" onclick="dupForm('${f.id}')">⧉ Duplicate</div>
+              <div class="dropdown-item" onclick="openEdit('${f.id}')">✎ Edit Info</div>
+              <hr class="dropdown-sep">
+              <div class="dropdown-item danger" onclick="openDel('${f.id}','${DocmoAPI.escA(f.title)}')">⊗ Delete</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+            }).join('');
+            // Close dropdowns on outside click
+            document.addEventListener('click', () => document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open')), { once: true });
+        }
+
+        function toggleDd(id) { const m = document.getElementById(id); const was = m.classList.contains('open'); document.querySelectorAll('.dropdown-menu.open').forEach(x => x.classList.remove('open')); if (!was) m.classList.add('open'); }
+        function copyLink(id) { navigator.clipboard.writeText(window.location.origin + '/form/' + id).catch(() => { }); toast('Link copied to clipboard', 'success'); }
+        async function dupForm(id) { try { await DocmoAPI.duplicateForm(id); await loadForms(); toast('Form duplicated', 'success'); } catch (e) { toast(e.message, 'error'); } }
+
+        function openNewModal() { document.getElementById('mTitle').value = ''; document.getElementById('mDesc').value = ''; document.getElementById('mStatus').value = 'draft'; document.getElementById('mIcon').value = '◻'; document.getElementById('newModal').classList.add('open'); setTimeout(() => document.getElementById('mTitle').focus(), 100); }
+        async function createForm() {
+            const t = document.getElementById('mTitle').value.trim();
+            if (!t) { document.getElementById('mTitle').classList.add('input-error'); return; }
+            const btn = document.getElementById('createBtn'); btn.textContent = 'Creating...'; btn.disabled = true;
+            try { const f = await DocmoAPI.createForm({ title: t, description: document.getElementById('mDesc').value.trim(), status: document.getElementById('mStatus').value, icon: document.getElementById('mIcon').value || '◻' }); document.getElementById('newModal').classList.remove('open'); window.location = '/builder?id=' + f.id; }
+            catch (e) { toast(e.message, 'error'); btn.textContent = 'Create & Edit Form'; btn.disabled = false; }
+        }
+
+        function openEdit(id) { const f = allForms.find(f => f.id === id); if (!f) return; document.getElementById('eId').value = id; document.getElementById('eTitle').value = f.title; document.getElementById('eDesc').value = f.description || ''; document.getElementById('eStatus').value = f.status; document.getElementById('editModal').classList.add('open'); }
+        async function saveEdit() {
+            const id = document.getElementById('eId').value;
+            try { await DocmoAPI.updateForm(id, { title: document.getElementById('eTitle').value, description: document.getElementById('eDesc').value, status: document.getElementById('eStatus').value }); document.getElementById('editModal').classList.remove('open'); await loadForms(); await loadStats(); toast('Form updated', 'success'); }
+            catch (e) { toast(e.message, 'error'); }
+        }
+
+        function openDel(id, title) { document.getElementById('delMsg').textContent = `Delete "${title}"? This will also delete all ${allForms.find(f => f.id === id)?.responseCount || 0} responses.`; document.getElementById('delConfirmBtn').onclick = async () => { try { await DocmoAPI.deleteForm(id); document.getElementById('delModal').classList.remove('open'); await loadForms(); await loadStats(); toast('Form deleted', 'success'); } catch (e) { toast(e.message, 'error'); } }; document.getElementById('delModal').classList.add('open'); }
+
+        async function runAI() {
+            const p = document.getElementById('aiPrompt').value.trim(); if (!p) { toast('Enter a description for your form', 'warning'); return; }
+            const btn = document.getElementById('aiBtn'); btn.textContent = 'Generating...'; btn.disabled = true;
+            try { const r = await DocmoAI.generateForm(p); const f = await DocmoAPI.createForm({ title: r.title || 'AI Generated Form', description: r.description || '', fields: r.fields || [], status: 'draft', icon: '◈' }); toast('Form generated successfully!', 'success'); setTimeout(() => window.location = '/builder?id=' + f.id, 600); }
+            catch (e) { toast('AI Error: ' + e.message, 'error'); }
+            finally { btn.textContent = 'Generate Form'; btn.disabled = false; }
+        }
+
+        function toggleTheme() { const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', t); DocmoAPI.updateMe({ theme: t }).catch(() => { }); }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open')); });
+    </script>
+</body>
+
+</html>

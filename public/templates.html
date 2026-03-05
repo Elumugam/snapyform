@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Templates – SnapyForm</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="/js/api.js"></script>
+    <style>
+        .tpl-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px
+        }
+
+        .tpl-card {
+            padding: 20px;
+            cursor: pointer;
+            transition: var(--spring)
+        }
+
+        .tpl-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+            border-color: var(--border-md)
+        }
+
+        .tpl-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius);
+            background: var(--accent-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 12px
+        }
+
+        .tpl-cat {
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--text-4);
+            margin-bottom: 6px
+        }
+
+        .tpl-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 6px
+        }
+
+        .tpl-desc {
+            font-size: 12.5px;
+            color: var(--text-3);
+            line-height: 1.6;
+            margin-bottom: 16px
+        }
+
+        .cat-filter {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 20px
+        }
+
+        @media(max-width:900px) {
+            .tpl-grid {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo" onclick="window.location='/'">
+                <div class="logo-mark">S</div><span class="logo-text">SnapyForm</span>
+            </div>
+            <div class="sidebar-section">
+                <div class="nav-item" onclick="window.location='/dashboard'">
+                    <div class="nav-icon-wrap">⊞</div><span>Dashboard</span>
+                </div>
+                <div class="nav-item active">
+                    <div class="nav-icon-wrap">◧</div><span>Templates</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/responses'">
+                    <div class="nav-icon-wrap">≡</div><span>Responses</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/export'">
+                    <div class="nav-icon-wrap">↓</div><span>Export</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/settings'">
+                    <div class="nav-icon-wrap">◎</div><span>Settings</span>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-widget">
+                    <div class="user-avatar" id="uAvatar">?</div>
+                    <div>
+                        <div class="user-name" id="uName">...</div>
+                    </div><span style="margin-left:auto;font-size:13px;cursor:pointer"
+                        onclick="DocmoAPI.logout()">⏻</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="page-shell">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">Templates</div>
+                        <div class="page-subtitle">Start with a pre-built form template</div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="window.location='/dashboard'">← Back to
+                        Dashboard</button>
+                </div>
+
+                <div class="cat-filter" id="catFilter"></div>
+
+                <div class="tpl-grid" id="tplGrid">
+                    <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-4)">Loading
+                        templates...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- USE TEMPLATE MODAL -->
+    <div class="modal-backdrop" id="tplModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="tplModalTitle">Use Template</div><button
+                    class="btn btn-ghost btn-icon btn-sm"
+                    onclick="document.getElementById('tplModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="tplPreview" style="margin-bottom:16px"></div>
+                <div class="field"><label class="label">Form Title <span style="color:var(--red)">*</span></label><input
+                        type="text" class="input" id="tplTitle" placeholder="Enter form title"></div>
+                <div class="field"><label class="label">Description</label><textarea class="input" id="tplDesc"
+                        placeholder="Optional description" style="min-height:56px"></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary"
+                    onclick="document.getElementById('tplModal').classList.remove('open')">Cancel</button><button
+                    class="btn btn-primary" id="useTplBtn" onclick="useTemplate()">Create from Template →</button></div>
+        </div>
+    </div>
+
+    <script>
+        let templates = [], selTpl = null, activeFilter = 'All';
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!DocmoAPI.requireAuth()) return;
+            const u = await DocmoAPI.getMe();
+            if (u) { document.getElementById('uAvatar').textContent = u.avatar || '?'; document.getElementById('uName').textContent = u.name || 'User'; }
+            templates = await DocmoAPI.getTemplates().catch(() => []);
+            buildFilters();
+            renderTemplates('All');
+        });
+
+        function buildFilters() { const cats = ['All', ...new Set(templates.map(t => t.category || 'General'))]; document.getElementById('catFilter').innerHTML = cats.map(c => `<button class="btn ${c === 'All' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setFilter('${DocmoAPI.escA(c)}',this)">${c}</button>`).join(''); }
+        function setFilter(c, btn) { activeFilter = c; document.querySelectorAll('.cat-filter .btn').forEach(b => b.className = 'btn btn-secondary btn-sm'); btn.className = 'btn btn-primary btn-sm'; renderTemplates(c); }
+        function renderTemplates(cat) { const list = cat === 'All' ? templates : templates.filter(t => (t.category || 'General') === cat); document.getElementById('tplGrid').innerHTML = list.map(t => `<div class="card tpl-card" onclick="openTplModal('${t.id}')"><div class="tpl-icon">${t.icon || '◻'}</div><div class="tpl-cat">${t.category || 'General'}</div><div class="tpl-title">${DocmoAPI.escH(t.title)}</div><div class="tpl-desc">${DocmoAPI.escH(t.description || '')}</div><div style="display:flex;justify-content:space-between;align-items:center"><span class="badge badge-gray">${t.fields?.length || 0} fields</span><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openTplModal('${t.id}')">Use Template →</button></div></div>`).join('') || `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-4)">No templates in this category</div>`; }
+
+        function openTplModal(id) { selTpl = templates.find(t => t.id === id); if (!selTpl) return; document.getElementById('tplModalTitle').textContent = selTpl.title; document.getElementById('tplTitle').value = selTpl.title; document.getElementById('tplDesc').value = selTpl.description || ''; document.getElementById('tplPreview').innerHTML = `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px"><div style="font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:8px">Preview — ${selTpl.fields?.length || 0} fields</div>${(selTpl.fields || []).map(f => `<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:12.5px;display:flex;gap:6px;align-items:center"><span class="badge badge-gray">${f.type}</span><span style="color:var(--text-2)">${DocmoAPI.escH(f.label)}</span>${f.required ? '<span style="color:var(--red);font-size:10px;margin-left:auto">required</span>' : ''}</div>`).join('')}</div>`; document.getElementById('tplModal').classList.add('open'); setTimeout(() => document.getElementById('tplTitle').select(), 100); }
+
+        async function useTemplate() {
+            if (!selTpl) return; const t = document.getElementById('tplTitle').value.trim(); if (!t) { document.getElementById('tplTitle').classList.add('input-error'); return; }
+            const btn = document.getElementById('useTplBtn'); btn.textContent = 'Creating...'; btn.disabled = true;
+            try { const f = await DocmoAPI.createForm({ title: t, description: document.getElementById('tplDesc').value.trim(), fields: selTpl.fields || [], icon: selTpl.icon || '◻', status: 'draft' }); document.getElementById('tplModal').classList.remove('open'); toast('Form created from template!', 'success'); setTimeout(() => window.location = '/builder?id=' + f.id, 500); }
+            catch (e) { toast(e.message, 'error'); btn.textContent = 'Create from Template →'; btn.disabled = false; }
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open')); });
+    </script>
+</body>
+
+</html>

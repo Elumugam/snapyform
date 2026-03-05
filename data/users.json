@@ -1,0 +1,53 @@
+[
+  {
+    "id": "user_demo",
+    "name": "John Smith",
+    "email": "demo@docmo.app",
+    "password": "$2a$10$.0eLLdg5pznChiB1v46jpOATJE5ba0JTZezCvgU0rb2ihVML0X9Gy",
+    "plan": "Pro",
+    "avatar": "JS",
+    "theme": "dark",
+    "createdAt": "2026-03-05T07:33:58.392Z"
+  },
+  {
+    "id": "user_468fdfd712",
+    "name": "john",
+    "firstName": "john",
+    "lastName": "",
+    "email": "janaallan6317@gmail.com",
+    "password": "$2a$10$NFKYWYa9tHKhO1wsclJf1u.8esWScgs0LzHBiPiMt3TbL3Pa2WBS2",
+    "plan": "Free",
+    "avatar": "J",
+    "theme": "dark",
+    "createdAt": "2026-03-05T07:33:58.465Z"
+  },
+  {
+    "id": "user_a8f7aecbb1",
+    "name": "Demo User",
+    "firstName": "Demo",
+    "lastName": "User",
+    "email": "demo@snapyform.com",
+    "password": "$2a$10$F6r/QwqAlNlO3faIXBtPnuWN2uvzgOmS63wtlVt2t8mvb7dcJp8oW",
+    "plan": "Free",
+    "avatar": "DU",
+    "theme": "dark",
+    "isAdmin": false,
+    "isBlocked": false,
+    "createdAt": "2026-03-05T08:10:52.640Z",
+    "updatedAt": "2026-03-05T08:43:22.413Z"
+  },
+  {
+    "id": "user_75401baf6c",
+    "name": "elumugam",
+    "firstName": "elumugam",
+    "lastName": "",
+    "email": "info.elumugam@gmail.com",
+    "password": "$2a$10$JStL3j9B1HMJR5FQ47jfgelf9OGIVK9wH3cy9RpWzm2GOWyFGgdiW",
+    "plan": "Free",
+    "avatar": "E",
+    "theme": "dark",
+    "isAdmin": false,
+    "isBlocked": false,
+    "createdAt": "2026-03-05T08:16:17.837Z"
+  }
+]

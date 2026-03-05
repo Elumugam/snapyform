@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Center – SnapyForm</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="/js/api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <style>
+        .export-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 24px
+        }
+
+        .export-card {
+            padding: 20px;
+            cursor: pointer;
+            transition: var(--spring);
+            text-align: left
+        }
+
+        .export-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow)
+        }
+
+        .export-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10.5px;
+            font-weight: 700;
+            margin-bottom: 10px
+        }
+
+        .hist-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px
+        }
+
+        .map-row {
+            display: grid;
+            grid-template-columns: 1fr 20px 1fr;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 12.5px
+        }
+
+        @media(max-width:900px) {
+            .export-grid {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo" onclick="window.location='/'">
+                <div class="logo-mark">S</div><span class="logo-text">SnapyForm</span>
+            </div>
+            <div class="sidebar-section">
+                <div class="nav-item" onclick="window.location='/dashboard'">
+                    <div class="nav-icon-wrap">⊞</div><span>Dashboard</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/responses'">
+                    <div class="nav-icon-wrap">≡</div><span>Responses</span>
+                </div>
+                <div class="nav-item active">
+                    <div class="nav-icon-wrap">↓</div><span>Export</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/settings'">
+                    <div class="nav-icon-wrap">◎</div><span>Settings</span>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-widget">
+                    <div class="user-avatar" id="uAvatar">?</div>
+                    <div>
+                        <div class="user-name" id="uName">...</div>
+                    </div><span style="margin-left:auto;font-size:13px;cursor:pointer"
+                        onclick="DocmoAPI.logout()">⏻</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="page-shell">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">Export Center</div>
+                        <div class="page-subtitle">Download your data in any format</div>
+                    </div>
+                </div>
+
+                <div class="card card-body mb-20">
+                    <div class="input-row-3">
+                        <div class="field"><label class="label">Select Form</label><select class="input" id="formSel"
+                                onchange="onFormChange()"></select></div>
+                        <div class="field"><label class="label">From Date</label><input type="date" class="input"
+                                id="dFrom" onchange="updateCount()"></div>
+                        <div class="field"><label class="label">To Date</label><input type="date" class="input" id="dTo"
+                                onchange="updateCount()"></div>
+                    </div>
+                    <div class="flex items-center gap-8" style="margin-top:8px">
+                        <div class="badge badge-accent" id="recCount">0 records selected</div>
+                    </div>
+                </div>
+
+                <div class="page-title" style="font-size:15px;margin-bottom:14px">Choose Export Format</div>
+                <div class="export-grid">
+                    <div class="card export-card" onclick="doExport('xlsx')">
+                        <div class="export-badge" style="background:#217346;color:#fff">.xlsx</div>
+                        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Microsoft Excel</div>
+                        <div style="font-size:12.5px;color:var(--text-3);margin-bottom:14px">Spreadsheet compatible with
+                            Excel, Google Sheets, and Numbers</div><button class="btn btn-secondary btn-sm"
+                            onclick="event.stopPropagation();doExport('xlsx')">Download Excel →</button>
+                    </div>
+                    <div class="card export-card" onclick="doExport('csv')">
+                        <div class="export-badge" style="background:#0ea5e9;color:#fff">.csv</div>
+                        <div style="font-size:14px;font-weight:700;margin-bottom:4px">CSV File</div>
+                        <div style="font-size:12.5px;color:var(--text-3);margin-bottom:14px">Universal format compatible
+                            with any spreadsheet or database tool</div><button class="btn btn-secondary btn-sm"
+                            onclick="event.stopPropagation();doExport('csv')">Download CSV →</button>
+                    </div>
+                    <div class="card export-card" onclick="doExport('json')">
+                        <div class="export-badge" style="background:#f59e0b;color:#fff">.json</div>
+                        <div style="font-size:14px;font-weight:700;margin-bottom:4px">JSON Data</div>
+                        <div style="font-size:12.5px;color:var(--text-3);margin-bottom:14px">Structured data for APIs,
+                            databases, and developer use</div><button class="btn btn-secondary btn-sm"
+                            onclick="event.stopPropagation();doExport('json')">Download JSON →</button>
+                    </div>
+                    <div class="card export-card" onclick="doExport('pdf')">
+                        <div class="export-badge" style="background:#ef4444;color:#fff">.pdf</div>
+                        <div style="font-size:14px;font-weight:700;margin-bottom:4px">PDF Report</div>
+                        <div style="font-size:12.5px;color:var(--text-3);margin-bottom:14px">Printable summary report
+                            with all response data</div><button class="btn btn-secondary btn-sm"
+                            onclick="event.stopPropagation();doExport('pdf')">Download PDF →</button>
+                    </div>
+                    <div class="card export-card" onclick="doExport('sql')">
+                        <div class="export-badge" style="background:#8b5cf6;color:#fff">.sql</div>
+                        <div style="font-size:14px;font-weight:700;margin-bottom:4px">SQL Dump</div>
+                        <div style="font-size:12.5px;color:var(--text-3);margin-bottom:14px">CREATE TABLE + INSERT
+                            statements for MySQL, PostgreSQL</div><button class="btn btn-secondary btn-sm"
+                            onclick="event.stopPropagation();doExport('sql')">Download SQL →</button>
+                    </div>
+                    <div class="card export-card" onclick="doExport('txt')">
+                        <div class="export-badge" style="background:#10b981;color:#fff">.txt</div>
+                        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Plain Text</div>
+                        <div style="font-size:12.5px;color:var(--text-3);margin-bottom:14px">Human-readable text format
+                            for simple reports and archives</div><button class="btn btn-secondary btn-sm"
+                            onclick="event.stopPropagation();doExport('txt')">Download TXT →</button>
+                    </div>
+                </div>
+
+                <div class="card mb-20">
+                    <div class="card-header">
+                        <div class="card-title">Column Mapping</div>
+                        <div style="font-size:12px;color:var(--text-3)">Rename fields in the exported file</div>
+                    </div>
+                    <div class="card-body" id="mappingArea">
+                        <div style="font-size:13px;color:var(--text-3)">Select a form to see field mappings</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Export History</div><button class="btn btn-ghost btn-sm"
+                            onclick="clearHist()">Clear</button>
+                    </div>
+                    <div id="histArea">
+                        <div class="hist-row" style="color:var(--text-4);font-size:13px;border:none">No exports yet
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let allResp = [], colMaps = {};
+        const p = new URLSearchParams(location.search);
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!DocmoAPI.requireAuth()) return;
+            const u = await DocmoAPI.getMe(); if (u) { document.getElementById('uAvatar').textContent = u.avatar || '?'; document.getElementById('uName').textContent = u.name || 'User'; }
+            const forms = await DocmoAPI.getForms().catch(() => []);
+            const initId = p.get('id') || '';
+            document.getElementById('formSel').innerHTML = '<option value="">— All Forms —</option>' + forms.map(f => `<option value="${f.id}"${f.id === initId ? ' selected' : ''}>${DocmoAPI.escH(f.title)}</option>`).join('');
+            const d = new Date(), from = new Date(d); from.setMonth(from.getMonth() - 1);
+            document.getElementById('dTo').value = d.toISOString().slice(0, 10);
+            document.getElementById('dFrom').value = from.toISOString().slice(0, 10);
+            await onFormChange(); loadHist();
+        });
+
+        async function onFormChange() { const id = document.getElementById('formSel').value; try { allResp = id ? await DocmoAPI.getResponses(id) : await DocmoAPI.getResponses(); } catch { allResp = []; } updateCount(); buildMapping(); }
+        function getFiltered() { let r = [...allResp]; const from = document.getElementById('dFrom').value, to = document.getElementById('dTo').value; if (from) r = r.filter(x => new Date(x.submittedAt) >= new Date(from)); if (to) r = r.filter(x => new Date(x.submittedAt) <= new Date(to + 'T23:59:59')); return r; }
+        function updateCount() { document.getElementById('recCount').textContent = getFiltered().length + ' records selected'; }
+
+        async function buildMapping() {
+            const id = document.getElementById('formSel').value;
+            if (!id) { document.getElementById('mappingArea').innerHTML = '<div style="font-size:13px;color:var(--text-3)">Select a form</div>'; return; }
+            let fields = []; try { const f = await DocmoAPI.getForm(id); fields = f.fields || []; } catch { }
+            fields = fields.filter(f => !['heading', 'divider'].includes(f.type));
+            if (!fields.length) { document.getElementById('mappingArea').innerHTML = '<div style="font-size:13px;color:var(--text-3)">No fields</div>'; return; }
+            document.getElementById('mappingArea').innerHTML = fields.map(f => `<div class="map-row"><input class="input" value="${DocmoAPI.escA(f.label)}" readonly style="font-size:12px;color:var(--text-3)"><span style="text-align:center;color:var(--text-4)">→</span><input class="input" id="mp_${f.id}" value="${DocmoAPI.escA(colMaps[f.label] || f.label)}" style="font-size:12px" onchange="colMaps['${DocmoAPI.escA(f.label)}']=this.value"></div>`).join('');
+        }
+
+        function getCols(r) { const k = new Set(); r.forEach(x => Object.keys(x.data || {}).forEach(c => k.add(c))); return [...k]; }
+        function lbl(k) { return colMaps[k] || k; }
+        function dl(content, filename, type) { const blob = new Blob([content], { type }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
+        function getFormName() { const s = document.getElementById('formSel'); return s.selectedOptions[0]?.value ? s.selectedOptions[0].text.split(' (')[0].replace(/[^a-zA-Z0-9]/g, '_') : 'snapyform_export'; }
+
+        function doExport(format) {
+            const r = getFiltered(); if (!r.length) { toast('No records to export', 'warning'); return; }
+            const name = getFormName();
+            try {
+                if (format === 'csv') { const cols = getCols(r); const h = ['ID', 'Submitted At', ...cols.map(lbl)]; const rows = r.map(x => [x.id, new Date(x.submittedAt).toLocaleString(), ...cols.map(c => JSON.stringify(x.data?.[c] || ''))]); dl([h.join(','), ...rows.map(r => r.join(','))].join('\n'), name + '.csv', 'text/csv'); }
+                else if (format === 'json') { const cols = getCols(r); dl(JSON.stringify(r.map(x => ({ id: x.id, submittedAt: x.submittedAt, ...Object.fromEntries(cols.map(c => [lbl(c), x.data?.[c] || ''])) })), null, 2), name + '.json', 'application/json'); }
+                else if (format === 'xlsx') { const cols = getCols(r); const ws = XLSX.utils.json_to_sheet(r.map(x => ({ ID: x.id, 'Submitted At': new Date(x.submittedAt).toLocaleString(), ...Object.fromEntries(cols.map(c => [lbl(c), x.data?.[c] || ''])) }))); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Responses'); XLSX.writeFile(wb, name + '.xlsx'); }
+                else if (format === 'sql') { const cols = getCols(r); const t = name.toLowerCase(); const allC = ['id', 'submitted_at', ...cols.map(c => c.replace(/\W+/g, '_').toLowerCase())]; let sql = `-- SnapyForm SQL Export ${new Date().toISOString()}\nCREATE TABLE IF NOT EXISTS ${t} (\n${allC.map(c => `  ${c} TEXT`).join(',\n')}\n);\n\n`; r.forEach(x => { const vals = [x.id, x.submittedAt, ...cols.map(c => x.data?.[c] || '')].map(v => `'${String(v).replace(/'/g, "''")}' `); sql += `INSERT INTO ${t} (${allC.join(', ')}) VALUES (${vals.join(', ')});\n`; }); dl(sql, name + '.sql', 'text/plain'); }
+                else if (format === 'txt') { let txt = `SnapyForm Export: ${name}\nGenerated: ${new Date().toLocaleString()}\nTotal: ${r.length}\n${'='.repeat(50)}\n\n`; r.forEach((x, i) => { txt += `#${i + 1} | ${new Date(x.submittedAt).toLocaleString()}\n`; Object.entries(x.data || {}).forEach(([k, v]) => txt += `  ${k}: ${v}\n`); txt += '\n'; }); dl(txt, name + '.txt', 'text/plain'); }
+                else if (format === 'pdf') { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('SnapyForm Export Report', 14, 18); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text('Form: ' + name, 14, 26); doc.text('Generated: ' + new Date().toLocaleString(), 14, 32); doc.text('Total: ' + r.length + ' responses', 14, 38); let y = 50; r.slice(0, 25).forEach((x, i) => { if (y > 270) { doc.addPage(); y = 15; } doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text(`#${i + 1} — ${new Date(x.submittedAt).toLocaleDateString()}`, 14, y); y += 6; doc.setFont('helvetica', 'normal'); doc.setFontSize(10); Object.entries(x.data || {}).forEach(([k, v]) => { if (y > 276) { doc.addPage(); y = 15; } const line = `${k}: ${String(v || '').slice(0, 80)}`; doc.text(line, 18, y); y += 5; }); y += 4; }); doc.save(name + '.pdf'); }
+                saveHist(format, r.length, name); loadHist();
+                toast(`${format.toUpperCase()} export complete (${r.length} records)`, 'success');
+            } catch (e) { toast('Export failed: ' + e.message, 'error'); console.error(e); }
+        }
+
+        function saveHist(f, count, n) { let h = JSON.parse(localStorage.getItem('sf_export_hist') || '[]'); h.unshift({ format: f, count, name: n, date: new Date().toISOString() }); localStorage.setItem('sf_export_hist', JSON.stringify(h.slice(0, 10))); }
+        function loadHist() { const h = JSON.parse(localStorage.getItem('sf_export_hist') || '[]'); const a = document.getElementById('histArea'); a.innerHTML = h.length ? h.map(x => `<div class="hist-row"><span class="badge badge-gray" style="width:42px;text-align:center">${x.format}</span><span style="flex:1;font-weight:500">${DocmoAPI.escH(x.name)}</span><span style="color:var(--text-3)">${x.count} records</span><span style="color:var(--text-4)">${DocmoAPI.relTime(x.date)}</span></div>`).join('') : '<div class="hist-row" style="color:var(--text-4);border:none">No exports yet</div>'; }
+        function clearHist() { localStorage.removeItem('sf_export_hist'); loadHist(); }
+    </script>
+</body>
+
+</html>

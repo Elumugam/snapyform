@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Builder – Docmo</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="js/db.js"></script>
+    <script src="js/ai.js"></script>
+    <style>
+        body {
+            overflow: hidden;
+        }
+
+        .builder-wrap {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Topbar */
+        .btopbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 14px;
+            height: 54px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .form-title-inp {
+            background: none;
+            border: none;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: inherit;
+            min-width: 160px;
+            max-width: 300px;
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+
+        .form-title-inp:focus {
+            outline: 1px solid var(--accent);
+        }
+
+        /* Body */
+        .builder-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Left */
+        .left-panel {
+            width: 210px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .left-hdr {
+            padding: 12px 14px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .field-grp {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 10px 14px 4px;
+        }
+
+        .field-type-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            border-radius: 0;
+        }
+
+        .field-type-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .field-type-icon {
+            font-size: 13px;
+            width: 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* AI area in left panel */
+        .ai-panel {
+            border-top: 1px solid var(--border);
+            padding: 12px;
+            margin-top: auto;
+        }
+
+        .ai-panel textarea {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 12px;
+            color: var(--text-primary);
+            font-family: inherit;
+            resize: none;
+            min-height: 64px;
+        }
+
+        /* Canvas */
+        .canvas-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: var(--bg-primary);
+        }
+
+        .canvas-wrap {
+            max-width: 660px;
+            margin: 0 auto;
+        }
+
+        .canvas-form-hdr {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            padding: 22px 24px;
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+
+        .canvas-form-body {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            padding: 20px 24px 24px;
+        }
+
+        /* Field cards */
+        .field-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px 14px 14px 10px;
+            margin-bottom: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            animation: fadeInUp 0.22s ease;
+        }
+
+        .field-card:hover {
+            border-color: var(--border-light);
+        }
+
+        .field-card.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-soft);
+        }
+
+        .drag-handle {
+            color: var(--text-muted);
+            cursor: grab;
+            font-size: 15px;
+            padding: 2px;
+            margin-top: 1px;
+            user-select: none;
+        }
+
+        .field-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .field-lbl {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 7px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .field-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .field-card:hover .field-actions,
+        .field-card.selected .field-actions {
+            opacity: 1;
+        }
+
+        .mini-btn {
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+        }
+
+        .mini-btn:hover {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .drop-target {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 10px;
+            transition: var(--transition);
+        }
+
+        .drop-target:hover,
+        .drop-target.dragover {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        /* Previews */
+        .prev-input {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--text-muted);
+            width: 100%;
+        }
+
+        .prev-textarea {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--text-muted);
+            width: 100%;
+            min-height: 56px;
+        }
+
+        .prev-stars {
+            display: flex;
+            gap: 5px;
+            font-size: 22px;
+        }
+
+        .prev-opt {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Right panel */
+        .right-panel {
+            width: 264px;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .right-hdr {
+            padding: 12px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .right-body {
+            padding: 14px;
+        }
+
+        .prop-sec-title {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            margin-top: 16px;
+        }
+
+        /* Share Modal */
+        .modal-ov {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-ov.open {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 28px;
+            max-width: 460px;
+            width: 100%;
+            margin: 16px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .link-box {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        .link-box span {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-secondary);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            padding: 11px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 999;
+            color: white;
+            animation: fadeInUp 0.3s ease;
+            font-size: 13px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="builder-wrap">
+        <!-- TOP BAR -->
+        <div class="btopbar">
+            <a href="dashboard.html"
+                style="display:flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:13px;text-decoration:none;padding:6px 8px;border-radius:6px;transition:var(--transition)"
+                onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">← Back</a>
+            <div style="width:1px;height:22px;background:var(--border)"></div>
+            <input class="form-title-inp" id="fTitle" value="Loading..." placeholder="Form title"
+                onchange="markDirty()">
+            <span class="badge badge-green" id="saveStatus">● Saved</span>
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+                <button class="btn btn-secondary btn-sm" id="aiTopBtn" onclick="showAIModal()">🤖 AI Generate</button>
+                <button class="btn btn-secondary btn-sm" onclick="openFomPreview()">👁 Preview</button>
+                <button class="btn btn-secondary btn-sm" onclick="openShareModal()">🔗 Share</button>
+                <button class="btn btn-primary btn-sm" onclick="saveForm()">💾 Save</button>
+                <div style="width:1px;height:22px;background:var(--border)"></div>
+                <button class="btn btn-ghost btn-sm" onclick="toggleTheme()">🌙</button>
+            </div>
+        </div>
+
+        <div class="builder-body">
+            <!-- LEFT PANEL -->
+            <div class="left-panel">
+                <div class="left-hdr">Add Fields</div>
+                <div class="field-grp">Basic</div>
+                <div class="field-type-item" onclick="addField('text','Text Input','📝')"><span
+                        class="field-type-icon">📝</span> Text Input</div>
+                <div class="field-type-item" onclick="addField('paragraph','Paragraph','¶')"><span
+                        class="field-type-icon">¶</span> Paragraph</div>
+                <div class="field-type-item" onclick="addField('number','Number','#')"><span
+                        class="field-type-icon">#</span> Number</div>
+                <div class="field-type-item" onclick="addField('email','Email Address','📧')"><span
+                        class="field-type-icon">📧</span> Email</div>
+                <div class="field-type-item" onclick="addField('phone','Phone Number','📞')"><span
+                        class="field-type-icon">📞</span> Phone</div>
+                <div class="field-grp">Selection</div>
+                <div class="field-type-item" onclick="addField('dropdown','Dropdown','▼')"><span
+                        class="field-type-icon">▼</span> Dropdown</div>
+                <div class="field-type-item" onclick="addField('radio','Multiple Choice','⚬')"><span
+                        class="field-type-icon">⚬</span> Multiple Choice</div>
+                <div class="field-type-item" onclick="addField('checkbox','Checkboxes','☑')"><span
+                        class="field-type-icon">☑</span> Checkboxes</div>
+                <div class="field-type-item" onclick="addField('rating','Rating','⭐')"><span
+                        class="field-type-icon">⭐</span> Rating</div>
+                <div class="field-grp">Advanced</div>
+                <div class="field-type-item" onclick="addField('date','Date / Time','📅')"><span
+                        class="field-type-icon">📅</span> Date / Time</div>
+                <div class="field-type-item" onclick="addField('file','File Upload','📎')"><span
+                        class="field-type-icon">📎</span> File Upload</div>
+                <div class="field-type-item" onclick="addField('signature','Signature','✍️')"><span
+                        class="field-type-icon">✍️</span> Signature</div>
+                <div class="field-grp">Layout</div>
+                <div class="field-type-item" onclick="addField('divider','Section Divider','—')"><span
+                        class="field-type-icon">—</span> Section Divider</div>
+                <div class="field-type-item" onclick="addField('heading','Section Heading','H')"><span
+                        class="field-type-icon">H</span> Section Heading</div>
+
+                <!-- AI panel in sidebar -->
+                <div class="ai-panel">
+                    <div
+                        style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">
+                        🤖 AI Quick Add</div>
+                    <textarea id="aiSidePrompt" placeholder='e.g. "add age and gender fields"'></textarea>
+                    <button class="btn btn-primary btn-sm btn-full mt-8" onclick="runSideAI()">Generate Fields</button>
+                </div>
+            </div>
+
+            <!-- CANVAS -->
+            <div class="canvas-area">
+                <div class="canvas-wrap">
+                    <div class="canvas-form-hdr">
+                        <div style="display:flex;gap:12px;align-items:center">
+                            <div id="formIconDisplay"
+                                style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">
+                                📋</div>
+                            <div style="flex:1">
+                                <div style="font-size:20px;font-weight:800" id="canvasTitle">Untitled Form</div>
+                                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px" id="canvasDesc">
+                                    No description</div>
+                            </div>
+                            <button class="btn btn-ghost btn-sm" onclick="openMetaEdit()">✏️</button>
+                        </div>
+                    </div>
+                    <div class="canvas-form-body">
+                        <div id="fieldsList"></div>
+                        <div class="drop-target" id="dropZone" ondragover="handleDragover(event)"
+                            ondrop="handleDrop(event)" ondragleave="this.classList.remove('dragover')">
+                            ＋ Drag a field here or click a type in the left panel
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL -->
+            <div class="right-panel">
+                <div class="right-hdr"><span>⚙️</span><span id="propTitle">Properties</span></div>
+                <div class="right-body" id="propsBody">
+                    <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:32px 0">Select a field to
+                        edit its properties</p>
+                </div>
+
+                <div style="border-top:1px solid var(--border);padding:14px">
+                    <div
+                        style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px">
+                        Form Settings</div>
+                    <div class="input-group mb-8"><label class="input-label">Status</label><select class="input-field"
+                            id="fStatus" onchange="markDirty()">
+                            <option value="draft">Draft</option>
+                            <option value="active">Active</option>
+                            <option value="closed">Closed</option>
+                        </select></div>
+                    <div class="input-group mb-8"><label class="input-label">Response Limit</label><input type="number"
+                            class="input-field" id="fLimit" placeholder="Unlimited" onchange="markDirty()"></div>
+                    <div class="input-group mb-8"><label class="input-label">Deadline</label><input type="date"
+                            class="input-field" id="fDeadline" onchange="markDirty()"></div>
+                    <div class="toggle mt-8">
+                        <div class="toggle-switch on" id="tAnon" onclick="toggleOption('tAnon')"></div><span
+                            class="toggle-label text-sm">Allow anonymous</span>
+                    </div>
+                    <div class="toggle mt-8">
+                        <div class="toggle-switch on" id="tProgress" onclick="toggleOption('tProgress')"></div><span
+                            class="toggle-label text-sm">Show progress bar</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- META EDIT MODAL -->
+    <div class="modal-ov" id="metaModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                <div style="font-size:18px;font-weight:800">Edit Form Info</div><button class="btn btn-ghost btn-sm"
+                    onclick="document.getElementById('metaModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="input-group mb-12"><label class="input-label">Form Title</label><input type="text"
+                    class="input-field" id="metaTitle"></div>
+            <div class="input-group mb-12"><label class="input-label">Description</label><textarea class="input-field"
+                    id="metaDesc" style="min-height:70px"></textarea></div>
+            <div class="input-group mb-4"><label class="input-label">Icon</label>
+                <div id="metaIconPicker" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end"><button
+                    class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('metaModal').classList.remove('open')">Cancel</button><button
+                    class="btn btn-primary btn-sm" onclick="saveMeta()">Save</button></div>
+        </div>
+    </div>
+
+    <!-- AI MODAL -->
+    <div class="modal-ov" id="aiModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                <div style="font-size:18px;font-weight:800">🤖 AI Form Generator</div><button
+                    class="btn btn-ghost btn-sm"
+                    onclick="document.getElementById('aiModal').classList.remove('open')">✕</button>
+            </div>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">Describe the form you want. AI will
+                generate all fields automatically using Google Gemini.</p>
+            <div class="input-group mb-16"><label class="input-label">Your Prompt</label><textarea class="input-field"
+                    id="aiModalPrompt"
+                    placeholder='e.g. "Create a patient intake form for a dental clinic with medical history"'
+                    style="min-height:90px"></textarea></div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+                <button class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('aiModal').classList.remove('open')">Cancel</button>
+                <button class="btn btn-primary" id="aiModalBtn" onclick="runAIModal()">✨ Generate Fields</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHARE MODAL -->
+    <div class="modal-ov" id="shareModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                <div style="font-size:18px;font-weight:800">Share Form</div><button class="btn btn-ghost btn-sm"
+                    onclick="document.getElementById('shareModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="input-group mb-14"><label class="input-label">Public Link</label>
+                <div class="link-box"><span id="shareUrl"></span><button class="btn btn-sm btn-secondary"
+                        onclick="copyShareLink()">📋 Copy</button></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <button class="btn btn-secondary btn-sm"
+                    onclick="window.open(document.getElementById('shareUrl').textContent,'_blank')">👁 Preview
+                    Form</button>
+                <a class="btn btn-secondary btn-sm" id="shareLinkHref" href="#" target="_blank">🌐 Open Link</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let formId = null;
+        let fields = [];
+        let selectedId = null;
+        let isDirty = false;
+        let metaSelectedIcon = '📋';
+        const ICONS = ['📋', '⭐', '💼', '📬', '🎉', '📊', '🏥', '🎓', '💡', '🔍', '📝', '🤝', '🎯', '💬', '📅', '🛒', '🌍', '🔔', '🏆'];
+
+        const fieldPreviews = {
+            text: (f) => `<div class="prev-input">${f.placeholder || 'Short text answer...'}</div>`,
+            paragraph: (f) => `<div class="prev-textarea">${f.placeholder || ''}</div>`,
+            email: (f) => `<div class="prev-input">${f.placeholder || 'email@example.com'}</div>`,
+            phone: (f) => `<div class="prev-input">${f.placeholder || '+91 9876 543210'}</div>`,
+            number: (f) => `<div class="prev-input">${f.placeholder || '0'}</div>`,
+            date: () => `<div class="prev-input">DD / MM / YYYY</div>`,
+            rating: () => `<div class="prev-stars">★★★★☆</div>`,
+            dropdown: (f) => `<div class="prev-input">Select an option ▼</div>`,
+            radio: (f) => `<div>${(f.options || ['Option A', 'Option B', 'Option C']).map(o => `<div class="prev-opt">⚬ ${escHtml(o)}</div>`).join('')}</div>`,
+            checkbox: (f) => `<div>${(f.options || ['Option A', 'Option B']).map(o => `<div class="prev-opt">☐ ${escHtml(o)}</div>`).join('')}</div>`,
+            file: () => `<div style="border:1px dashed var(--border);border-radius:8px;padding:16px;text-align:center;font-size:12px;color:var(--text-muted)">📎 Click or drag to upload</div>`,
+            signature: () => `<div style="border:1px solid var(--border);border-radius:8px;height:56px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-muted)">✍️ Signature area</div>`,
+            divider: () => `<hr style="border-color:var(--border)">`,
+            heading: (f) => `<div style="font-size:17px;font-weight:700;color:var(--text-secondary)">${f.label || 'Section Heading'}</div>`,
+        };
+
+        // ── Init ───────────────────────────────────────────────────────────────
+        DocmoDB.init();
+        const params = new URLSearchParams(location.search);
+        formId = params.get('id');
+        if (!formId) { window.location = 'dashboard.html'; }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const form = DocmoDB.getForm(formId);
+            if (!form) { alert('Form not found'); window.location = 'dashboard.html'; return; }
+            loadFormData(form);
+            applyTheme();
+        });
+
+        function loadFormData(form) {
+            fields = JSON.parse(JSON.stringify(form.fields || []));
+            document.getElementById('fTitle').value = form.title || '';
+            document.getElementById('canvasTitle').textContent = form.title || 'Untitled Form';
+            document.getElementById('canvasDesc').textContent = form.description || 'No description';
+            document.getElementById('formIconDisplay').textContent = form.icon || '📋';
+            document.title = (form.title || 'Form Builder') + ' – Docmo';
+            document.getElementById('fStatus').value = form.status || 'draft';
+            if (form.responseLimit) document.getElementById('fLimit').value = form.responseLimit;
+            if (form.deadline) document.getElementById('fDeadline').value = form.deadline.slice(0, 10);
+            if (!form.allowAnonymous) document.getElementById('tAnon').classList.remove('on');
+            if (!form.showProgress) document.getElementById('tProgress').classList.remove('on');
+            renderFields();
+        }
+
+        function applyTheme() {
+            const user = DocmoDB.getUser();
+            if (user.theme) document.documentElement.setAttribute('data-theme', user.theme);
+        }
+
+        // ── Render ────────────────────────────────────────────────────────────
+        function renderFields() {
+            const list = document.getElementById('fieldsList');
+            list.innerHTML = '';
+            fields.forEach((f, i) => {
+                const card = document.createElement('div');
+                card.className = 'field-card' + (f.id === selectedId ? ' selected' : '');
+                card.id = 'fc_' + f.id;
+                card.draggable = true;
+                card.innerHTML = `
+          <div class="drag-handle" title="Drag to reorder">⠿</div>
+          <div class="field-body">
+            <div class="field-lbl">
+              ${escHtml(f.label)}
+              ${f.required ? '<span style="color:var(--rose)">*</span>' : ''}
+              <span class="badge badge-accent" style="font-size:10px">${f.type}</span>
+            </div>
+            ${(fieldPreviews[f.type] || fieldPreviews.text)(f)}
+          </div>
+          <div class="field-actions">
+            <button class="mini-btn" title="Duplicate" onclick="event.stopPropagation();dupField('${f.id}')">⧉</button>
+            <button class="mini-btn" title="Move up" onclick="event.stopPropagation();moveField('${f.id}',-1)">↑</button>
+            <button class="mini-btn" title="Move down" onclick="event.stopPropagation();moveField('${f.id}',1)">↓</button>
+            <button class="mini-btn" style="color:var(--rose)" title="Delete" onclick="event.stopPropagation();deleteField('${f.id}')">🗑</button>
+          </div>`;
+                card.addEventListener('click', () => selectField(f.id));
+                card.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', f.id); card.style.opacity = '.4'; });
+                card.addEventListener('dragend', () => { card.style.opacity = '1'; });
+                list.appendChild(card);
+            });
+        }
+
+        function selectField(id) {
+            selectedId = id;
+            renderFields();
+            const f = fields.find(x => x.id === id);
+            if (!f) return;
+            document.getElementById('propTitle').textContent = f.label;
+            const hasOptions = ['dropdown', 'radio', 'checkbox'].includes(f.type);
+            document.getElementById('propsBody').innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="prop-sec-title" style="margin-top:0">Label</div>
+          <input class="input-field" id="pLabel" value="${escAttr(f.label)}" oninput="updateField('${id}','label',this.value)">
+          <div class="prop-sec-title">Placeholder</div>
+          <input class="input-field" id="pPlaceholder" value="${escAttr(f.placeholder || '')}" oninput="updateField('${id}','placeholder',this.value)">
+          <div class="prop-sec-title">Help Text</div>
+          <input class="input-field" id="pHelp" value="${escAttr(f.helpText || '')}" oninput="updateField('${id}','helpText',this.value)">
+          ${hasOptions ? `<div class="prop-sec-title">Options <span style="font-size:11px;color:var(--text-muted)">(one per line)</span></div><textarea class="input-field" style="min-height:80px" oninput="updateOptions('${id}',this.value)">${(f.options || []).join('\n')}</textarea>` : ''}
+          <div class="prop-sec-title">Validation</div>
+          <div class="toggle"><div class="toggle-switch ${f.required ? 'on' : ''}" id="reqToggle" onclick="toggleRequired('${id}')"></div><span class="toggle-label text-sm">Required field</span></div>
+          ${['text', 'paragraph', 'email'].includes(f.type) ? `
+          <div class="input-group"><label class="input-label">Min Length</label><input type="number" class="input-field" value="${f.minLength || ''}" oninput="updateField('${id}','minLength',this.value)" placeholder="No min"></div>
+          <div class="input-group"><label class="input-label">Max Length</label><input type="number" class="input-field" value="${f.maxLength || ''}" oninput="updateField('${id}','maxLength',this.value)" placeholder="No max"></div>` : ''}
+        </div>`;
+        }
+
+        // ── Field CRUD ─────────────────────────────────────────────────────────
+        function addField(type, label, icon) {
+            const id = 'f' + Date.now();
+            const defaults = {};
+            if (['dropdown', 'radio', 'checkbox'].includes(type)) defaults.options = ['Option 1', 'Option 2', 'Option 3'];
+            fields.push({ id, type, label, required: false, placeholder: '', ...defaults });
+            renderFields();
+            selectField(id);
+            markDirty();
+        }
+
+        function deleteField(id) {
+            fields = fields.filter(f => f.id !== id);
+            if (selectedId === id) {
+                selectedId = null;
+                document.getElementById('propsBody').innerHTML = '<p style="font-size:13px;color:var(--text-muted);text-align:center;padding:32px 0">Select a field to edit</p>';
+                document.getElementById('propTitle').textContent = 'Properties';
+            }
+            renderFields();
+            markDirty();
+        }
+
+        function dupField(id) {
+            const f = fields.find(x => x.id === id);
+            if (!f) return;
+            const nf = { ...JSON.parse(JSON.stringify(f)), id: 'f' + Date.now(), label: f.label + ' (copy)' };
+            fields.splice(fields.indexOf(f) + 1, 0, nf);
+            renderFields();
+            selectField(nf.id);
+            markDirty();
+        }
+
+        function moveField(id, dir) {
+            const i = fields.findIndex(x => x.id === id);
+            const ni = i + dir;
+            if (ni < 0 || ni >= fields.length) return;
+            [fields[i], fields[ni]] = [fields[ni], fields[i]];
+            renderFields();
+            markDirty();
+        }
+
+        function updateField(id, key, val) {
+            const f = fields.find(x => x.id === id);
+            if (f) { f[key] = val; }
+            // Update canvas label + preview live
+            const card = document.getElementById('fc_' + id);
+            if (card && key === 'label') { const lbl = card.querySelector('.field-lbl'); if (lbl) lbl.firstChild.textContent = val + ' '; }
+            markDirty();
+        }
+
+        function updateOptions(id, val) {
+            const f = fields.find(x => x.id === id);
+            if (f) { f.options = val.split('\n').map(s => s.trim()).filter(Boolean); }
+            renderFields();
+            selectField(id);
+            markDirty();
+        }
+
+        function toggleRequired(id) {
+            const f = fields.find(x => x.id === id);
+            if (f) { f.required = !f.required; selectField(id); markDirty(); }
+        }
+
+        function toggleOption(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('on');
+            markDirty();
+        }
+
+        // ── Drag & Drop ────────────────────────────────────────────────────────
+        let dragId = null;
+        document.addEventListener('dragstart', e => { if (e.target.classList.contains('field-card')) { dragId = e.target.id.replace('fc_', ''); } });
+        function handleDragover(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('dropZone').classList.remove('dragover');
+            const typeData = e.dataTransfer.getData('text/plain');
+            if (typeData && !fields.find(f => f.id === typeData)) {
+                // dragged from left panel — type was set
+            }
+            dragId = null;
+        }
+
+        // ── Save ───────────────────────────────────────────────────────────────
+        function saveForm() {
+            const title = document.getElementById('fTitle').value.trim() || 'Untitled Form';
+            const data = {
+                title,
+                fields: JSON.parse(JSON.stringify(fields)),
+                status: document.getElementById('fStatus').value,
+                responseLimit: document.getElementById('fLimit').value || null,
+                deadline: document.getElementById('fDeadline').value || null,
+                allowAnonymous: document.getElementById('tAnon').classList.contains('on'),
+                showProgress: document.getElementById('tProgress').classList.contains('on'),
+            };
+            DocmoDB.updateForm(formId, data);
+            document.getElementById('canvasTitle').textContent = title;
+            setSaved(true);
+            showToast('✅ Form saved!', 'var(--emerald)');
+        }
+
+        function markDirty() { setSaved(false); isDirty = true; }
+        function setSaved(yes) {
+            const el = document.getElementById('saveStatus');
+            el.textContent = yes ? '● Saved' : '● Unsaved';
+            el.className = 'badge ' + (yes ? 'badge-green' : 'badge-amber');
+            isDirty = !yes;
+        }
+
+        // ── Meta Edit ─────────────────────────────────────────────────────────
+        function openMetaEdit() {
+            const form = DocmoDB.getForm(formId);
+            document.getElementById('metaTitle').value = form.title || '';
+            document.getElementById('metaDesc').value = form.description || '';
+            metaSelectedIcon = form.icon || '📋';
+            renderMetaIconPicker();
+            document.getElementById('metaModal').classList.add('open');
+        }
+
+        function renderMetaIconPicker() {
+            const picker = document.getElementById('metaIconPicker');
+            picker.innerHTML = '';
+            ICONS.forEach(ic => {
+                const el = document.createElement('div');
+                el.style.cssText = 'width:34px;height:34px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;transition:var(--transition)';
+                el.textContent = ic;
+                if (ic === metaSelectedIcon) { el.style.borderColor = 'var(--accent)'; el.style.background = 'var(--accent-soft)'; }
+                el.onclick = () => {
+                    metaSelectedIcon = ic;
+                    picker.querySelectorAll('div').forEach(d => { d.style.borderColor = 'var(--border)'; d.style.background = ''; });
+                    el.style.borderColor = 'var(--accent)'; el.style.background = 'var(--accent-soft)';
+                };
+                picker.appendChild(el);
+            });
+        }
+
+        function saveMeta() {
+            const title = document.getElementById('metaTitle').value.trim() || 'Untitled Form';
+            const desc = document.getElementById('metaDesc').value.trim();
+            document.getElementById('fTitle').value = title;
+            document.getElementById('canvasTitle').textContent = title;
+            document.getElementById('canvasDesc').textContent = desc || 'No description';
+            document.getElementById('formIconDisplay').textContent = metaSelectedIcon;
+            DocmoDB.updateForm(formId, { title, description: desc, icon: metaSelectedIcon });
+            document.getElementById('metaModal').classList.remove('open');
+            showToast('✅ Saved!', 'var(--emerald)');
+        }
+
+        // ── AI ─────────────────────────────────────────────────────────────────
+        function showAIModal() { document.getElementById('aiModal').classList.add('open'); setTimeout(() => document.getElementById('aiModalPrompt').focus(), 100); }
+
+        async function runAIModal() {
+            const prompt = document.getElementById('aiModalPrompt').value.trim();
+            if (!prompt) return;
+            const btn = document.getElementById('aiModalBtn');
+            btn.textContent = '⏳ Generating...'; btn.disabled = true;
+            try {
+                const result = await DocmoAI.generateForm(prompt);
+                if (result.fields && result.fields.length) {
+                    const newFields = result.fields.map((f, i) => ({ ...f, id: 'ai' + Date.now() + i }));
+                    fields = newFields;
+                    if (result.title) { document.getElementById('fTitle').value = result.title; document.getElementById('canvasTitle').textContent = result.title; }
+                    if (result.description) document.getElementById('canvasDesc').textContent = result.description;
+                    renderFields();
+                    markDirty();
+                    document.getElementById('aiModal').classList.remove('open');
+                    showToast('🤖 AI generated ' + newFields.length + ' fields!', 'var(--accent)');
+                }
+            } catch (err) { showToast('❌ AI Error: ' + err.message, 'var(--rose)'); }
+            finally { btn.textContent = '✨ Generate Fields'; btn.disabled = false; }
+        }
+
+        async function runSideAI() {
+            const prompt = document.getElementById('aiSidePrompt').value.trim();
+            if (!prompt) return;
+            try {
+                showToast('🤖 Generating fields...', 'var(--accent)');
+                const result = await DocmoAI.generateForm('Add these fields to an existing form: ' + prompt);
+                if (result.fields) {
+                    const newFields = result.fields.map((f, i) => ({ ...f, id: 'ai' + Date.now() + i }));
+                    fields = [...fields, ...newFields];
+                    renderFields();
+                    markDirty();
+                    document.getElementById('aiSidePrompt').value = '';
+                    showToast('✅ Added ' + newFields.length + ' fields!', 'var(--emerald)');
+                }
+            } catch (err) { showToast('❌ ' + err.message, 'var(--rose)'); }
+        }
+
+        // ── Share ───────────────────────────────────────────────────────────────
+        function openShareModal() {
+            const base = window.location.href.replace('builder.html', 'form.html').split('?')[0];
+            const url = base + '?id=' + formId;
+            document.getElementById('shareUrl').textContent = url;
+            document.getElementById('shareLinkHref').href = url;
+            document.getElementById('shareModal').classList.add('open');
+        }
+
+        function copyShareLink() {
+            const url = document.getElementById('shareUrl').textContent;
+            navigator.clipboard.writeText(url).catch(() => { });
+            showToast('🔗 Link copied!', 'var(--emerald)');
+        }
+
+        function openFomPreview() {
+            saveForm();
+            window.open('form.html?id=' + formId, '_blank');
+        }
+
+        // ── Helpers ────────────────────────────────────────────────────────────
+        function toggleTheme() {
+            const h = document.documentElement;
+            const t = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            h.setAttribute('data-theme', t);
+            DocmoDB.updateUser({ theme: t });
+        }
+
+        function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function escAttr(s) { return String(s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+
+        function showToast(msg, color = 'var(--accent)') {
+            document.querySelectorAll('.toast').forEach(t => t.remove());
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.style.background = color;
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; }, 2500);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        window.addEventListener('beforeunload', e => { if (isDirty) { e.preventDefault(); e.returnValue = ''; } });
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveForm(); }
+            if (e.key === 'Escape') { document.querySelectorAll('.modal-ov.open').forEach(m => m.classList.remove('open')); }
+        });
+    </script>
+</body>
+
+</html>

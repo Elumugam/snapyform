@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Builder – SnapyForm</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="/js/api.js"></script>
+    <script src="/js/ai.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        body,
+        html {
+            overflow: hidden
+        }
+
+        .builder-grid {
+            display: grid;
+            grid-template-rows: var(--topbar-h) 1fr;
+            grid-template-columns: 220px 1fr 270px;
+            height: 100vh
+        }
+
+        .builder-topbar {
+            grid-column: 1/-1;
+            grid-row: 1;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 14px;
+            z-index: 100
+        }
+
+        .btitle {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            min-width: 200px;
+            max-width: 400px;
+            text-align: center
+        }
+
+        .btitle:focus {
+            background: var(--surface-2);
+            outline: none
+        }
+
+        .sidebar-panel {
+            grid-column: 1;
+            grid-row: 2;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto
+        }
+
+        .canvas-panel {
+            grid-column: 2;
+            grid-row: 2;
+            background: var(--bg);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px
+        }
+
+        .props-panel {
+            grid-column: 3;
+            grid-row: 2;
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            overflow-y: auto
+        }
+
+        .props-section {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .props-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--text-4);
+            margin-bottom: 10px
+        }
+
+        .palette-section {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--text-4);
+            padding: 12px 12px 6px
+        }
+
+        .canvas-card {
+            width: 100%;
+            max-width: 620px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow)
+        }
+
+        .canvas-field {
+            margin: 8px 14px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 11px 13px;
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition)
+        }
+
+        .canvas-field:hover {
+            border-color: var(--border-lg)
+        }
+
+        .canvas-field.sel {
+            border-color: var(--accent);
+            background: var(--accent-soft)
+        }
+
+        .cf-label {
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px
+        }
+
+        .cf-type {
+            font-size: 10.5px;
+            background: var(--surface-3);
+            color: var(--text-3);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 600
+        }
+
+        .cf-preview {
+            font-size: 12px;
+            color: var(--text-4);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 5px 9px;
+            margin-top: 4px
+        }
+
+        .cf-actions {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            display: none;
+            gap: 3px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 2px
+        }
+
+        .canvas-field:hover .cf-actions,
+        .canvas-field.sel .cf-actions {
+            display: flex
+        }
+
+        .unsaved-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--yellow);
+            display: none;
+            animation: pulse 2s infinite
+        }
+
+        .opt-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+            align-items: center
+        }
+
+        .opt-row input {
+            flex: 1;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 5px 9px;
+            font-size: 12.5px;
+            color: var(--text);
+            font-family: inherit
+        }
+
+        .cond-row {
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            gap: 6px;
+            margin-bottom: 6px;
+            font-size: 12px
+        }
+
+        .cond-row select {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 5px 8px;
+            font-size: 12px;
+            color: var(--text);
+            font-family: inherit
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .7);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            backdrop-filter: blur(2px)
+        }
+
+        .modal-backdrop.open {
+            display: flex
+        }
+
+        @media(max-width:1100px) {
+            .props-panel {
+                display: none
+            }
+
+            .builder-grid {
+                grid-template-columns: 220px 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="builder-grid">
+        <!-- TOP BAR -->
+        <div class="builder-topbar">
+            <a href="/dashboard" class="flex items-center gap-8" style="text-decoration:none;flex-shrink:0">
+                <div class="logo-mark">S</div>
+            </a>
+            <span style="color:var(--border-md)">/</span>
+            <input class="btitle" id="ftitle" value="Untitled Form" onchange="markUnsaved()">
+            <div class="unsaved-dot" id="udot" title="Unsaved changes"></div>
+            <div class="spacer"></div>
+            <button class="btn btn-ghost btn-sm" onclick="openAI()">AI Generate</button>
+            <button class="btn btn-ghost btn-sm" onclick="openQR()">QR Code</button>
+            <button class="btn btn-secondary btn-sm" onclick="openShare()">Share</button>
+            <button class="btn btn-ghost btn-sm" onclick="window.open('/form/'+formId,'_blank')">Preview</button>
+            <button class="btn btn-primary btn-sm" id="saveBtn" onclick="saveForm()">Save</button>
+        </div>
+
+        <!-- LEFT PALETTE -->
+        <div class="sidebar-panel">
+            <div class="palette-section">Input Fields</div>
+            <div id="palette"></div>
+            <div class="palette-section" style="margin-top:4px">Layout</div>
+            <div id="layoutPalette"></div>
+        </div>
+
+        <!-- CANVAS -->
+        <div class="canvas-panel" id="canvas">
+            <div class="canvas-card" id="canvasCard">
+                <div style="background:linear-gradient(135deg,var(--accent),#7c3aed);padding:20px 22px">
+                    <div style="font-size:16px;font-weight:700;color:#fff" id="pvTitle">Untitled Form</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,.65);margin-top:3px" id="pvDesc">Click to set
+                        description</div>
+                </div>
+                <div id="canvasFields" style="min-height:120px;padding-bottom:14px">
+                    <div class="empty-state" id="canvasEmpty" style="padding:40px">
+                        <div style="font-size:32px;margin-bottom:10px">↑</div>
+                        <div class="empty-title">Add fields from the left panel</div>
+                        <div class="empty-desc">Click any field type or use AI to auto-generate your form</div>
+                    </div>
+                </div>
+                <div style="padding:0 14px 14px;border-top:1px solid var(--border);padding-top:12px">
+                    <button class="btn btn-primary btn-sm" disabled style="opacity:.5;cursor:default">Submit</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROPERTIES -->
+        <div class="props-panel" id="propsPanel">
+            <div class="props-section" id="selectedProps" style="padding:14px 16px">
+                <div style="text-align:center;color:var(--text-4);font-size:13px;padding:20px 0">Select a field to edit
+                    its properties</div>
+            </div>
+            <div class="props-section">
+                <div class="props-label">Form Settings</div>
+                <div class="field"><label class="label">Status</label><select class="input" id="fsStatus"
+                        onchange="markUnsaved()">
+                        <option value="draft">Draft</option>
+                        <option value="active">Active</option>
+                        <option value="closed">Closed</option>
+                    </select></div>
+                <div class="field"><label class="label">Description</label><textarea class="input" id="fsDesc"
+                        style="min-height:56px;font-size:12.5px"
+                        onchange="markUnsaved();document.getElementById('pvDesc').textContent=this.value||'Click to add description'"></textarea>
+                </div>
+                <label class="flex items-center gap-8 mb-8" style="font-size:12.5px;cursor:pointer"><input
+                        type="checkbox" class="toggle" id="fsAnon" onchange="markUnsaved()"> Allow anonymous</label>
+                <label class="flex items-center gap-8" style="font-size:12.5px;cursor:pointer"><input type="checkbox"
+                        class="toggle" id="fsProgress" checked onchange="markUnsaved()"> Show progress bar</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHARE MODAL -->
+    <div class="modal-backdrop" id="shareModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Share Form</div><button class="btn btn-ghost btn-icon btn-sm"
+                    onclick="document.getElementById('shareModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="field"><label class="label">Public Link</label>
+                    <div class="flex gap-8"><input type="text" class="input" id="shareUrl" readonly
+                            style="font-family:monospace;font-size:12px"><button class="btn btn-secondary btn-sm"
+                            onclick="navigator.clipboard.writeText(document.getElementById('shareUrl').value);toast('Copied','success')">Copy</button>
+                    </div>
+                </div>
+                <div class="field"><label class="label">Embed Code</label><textarea class="input" id="embedCode"
+                        readonly style="font-family:monospace;font-size:11px;min-height:60px"></textarea></div>
+                <button class="btn btn-primary btn-sm"
+                    onclick="window.open(document.getElementById('shareUrl').value,'_blank')">Open Form →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI MODAL -->
+    <div class="modal-backdrop" id="aiModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">AI Form Generator <span class="badge badge-accent">OpenAI</span></div><button
+                    class="btn btn-ghost btn-icon btn-sm"
+                    onclick="document.getElementById('aiModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="field"><label class="label">Describe your form</label><textarea class="input" id="aiTxt"
+                        style="min-height:80px"
+                        placeholder='e.g. "Customer satisfaction survey for a restaurant with food quality, service, and overall experience questions"'></textarea>
+                </div>
+                <label class="flex items-center gap-8 mb-0" style="font-size:12.5px;cursor:pointer"><input
+                        type="checkbox" class="toggle" id="aiReplace"> Replace existing fields</label>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary"
+                    onclick="document.getElementById('aiModal').classList.remove('open')">Cancel</button><button
+                    class="btn btn-primary" id="aiGenBtn" onclick="runAIGenerate()">Generate Fields</button></div>
+        </div>
+    </div>
+
+    <!-- QR MODAL -->
+    <div class="modal-backdrop" id="qrModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-sm" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">QR Code</div><button class="btn btn-ghost btn-icon btn-sm"
+                    onclick="document.getElementById('qrModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="modal-body" style="text-align:center">
+                <div id="qrContainer"
+                    style="display:inline-block;padding:16px;background:white;border-radius:var(--radius);margin-bottom:14px">
+                </div>
+                <div style="font-size:12px;color:var(--text-3);margin-bottom:14px">Scan to open the form on any device
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="downloadQR()">Download QR</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIELD_TYPES = [
+            { type: 'text', icon: 'T', label: 'Text Field' }, { type: 'paragraph', icon: '¶', label: 'Paragraph' },
+            { type: 'email', icon: '@', label: 'Email' }, { type: 'phone', icon: '#', label: 'Phone' },
+            { type: 'number', icon: '1', label: 'Number' }, { type: 'date', icon: '⊞', label: 'Date' },
+            { type: 'dropdown', icon: '▾', label: 'Dropdown' }, { type: 'radio', icon: '◉', label: 'Multiple Choice' },
+            { type: 'checkbox', icon: '☑', label: 'Checkboxes' }, { type: 'rating', icon: '★', label: 'Rating Stars' },
+            { type: 'file', icon: '⎘', label: 'File Upload' }, { type: 'signature', icon: '✎', label: 'Signature' },
+        ];
+        const LAYOUT_TYPES = [{ type: 'heading', icon: 'H', label: 'Heading' }, { type: 'divider', icon: '—', label: 'Divider' }];
+
+        let formId = null, form = null, fields = [], selId = null, unsaved = false;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!DocmoAPI.requireAuth()) return;
+            buildPalette();
+            formId = new URLSearchParams(location.search).get('id');
+            if (!formId) { toast('No form ID', 'error'); setTimeout(() => window.location = '/dashboard', 1500); return; }
+            await loadForm();
+            document.addEventListener('keydown', e => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveForm(); }
+                if (e.key === 'Escape') { document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open')); }
+            });
+            window.addEventListener('beforeunload', e => { if (unsaved) { e.preventDefault(); e.returnValue = ''; } });
+        });
+
+        function buildPalette() {
+            document.getElementById('palette').innerHTML = FIELD_TYPES.map(t => `<div class="field-type-btn" onclick="addField('${t.type}')"><div class="field-type-icon" style="font-family:monospace;font-size:11px">${t.icon}</div>${t.label}</div>`).join('');
+            document.getElementById('layoutPalette').innerHTML = LAYOUT_TYPES.map(t => `<div class="field-type-btn" onclick="addField('${t.type}')"><div class="field-type-icon" style="font-family:monospace;font-size:11px">${t.icon}</div>${t.label}</div>`).join('');
+        }
+
+        async function loadForm() {
+            try {
+                form = await DocmoAPI.getForm(formId);
+                fields = form.fields || [];
+                document.getElementById('ftitle').value = form.title || 'Untitled Form';
+                document.getElementById('fsDesc').value = form.description || '';
+                document.getElementById('fsStatus').value = form.status || 'draft';
+                document.getElementById('fsAnon').checked = form.allowAnonymous !== false;
+                document.getElementById('fsProgress').checked = form.showProgress !== false;
+                document.getElementById('pvTitle').textContent = form.title || 'Untitled Form';
+                document.getElementById('pvDesc').textContent = form.description || 'Click to add description';
+                document.title = form.title + ' – Builder – SnapyForm';
+                renderCanvas();
+            } catch (e) { toast('Failed to load form: ' + e.message, 'error'); setTimeout(() => window.location = '/dashboard', 2000); }
+        }
+
+        async function saveForm() {
+            const btn = document.getElementById('saveBtn'); btn.textContent = 'Saving...'; btn.disabled = true;
+            try {
+                const t = document.getElementById('ftitle').value.trim() || 'Untitled Form';
+                form = await DocmoAPI.updateForm(formId, { title: t, description: document.getElementById('fsDesc').value, status: document.getElementById('fsStatus').value, allowAnonymous: document.getElementById('fsAnon').checked, showProgress: document.getElementById('fsProgress').checked, fields });
+                unsaved = false; document.getElementById('udot').style.display = 'none';
+                document.getElementById('pvTitle').textContent = t;
+                document.title = t + ' – Builder – SnapyForm';
+                toast('Saved', 'success');
+            } catch (e) { toast('Save failed: ' + e.message, 'error'); }
+            finally { btn.textContent = 'Save'; btn.disabled = false; }
+        }
+
+        function markUnsaved() { unsaved = true; document.getElementById('udot').style.display = 'block'; }
+
+        function addField(type) {
+            const defs = { text: { label: 'Short Answer', placeholder: 'Enter text...' }, paragraph: { label: 'Paragraph', placeholder: 'Write here...' }, email: { label: 'Email Address', placeholder: 'example@email.com' }, phone: { label: 'Phone Number', placeholder: '+91 9876543210' }, number: { label: 'Number', placeholder: '0' }, date: { label: 'Date' }, dropdown: { label: 'Select an option', options: ['Option 1', 'Option 2', 'Option 3'] }, radio: { label: 'Choose one', options: ['Option A', 'Option B', 'Option C'] }, checkbox: { label: 'Select all that apply', options: ['Option 1', 'Option 2', 'Option 3'] }, rating: { label: 'Rate your experience' }, file: { label: 'Upload a file' }, signature: { label: 'Signature' }, heading: { label: 'Section Heading' }, divider: { label: '' } };
+            const f = { id: 'f_' + Date.now(), type, required: false, ...(defs[type] || {}) };
+            fields.push(f); markUnsaved(); renderCanvas(); selectField(f.id);
+        }
+
+        function renderCanvas() {
+            const area = document.getElementById('canvasFields');
+            document.getElementById('canvasEmpty').style.display = fields.length ? 'none' : 'flex';
+            // Remove deleted
+            [...area.querySelectorAll('.canvas-field')].filter(el => !fields.find(f => f.id === el.dataset.id)).forEach(el => el.remove());
+            fields.forEach((f, i) => {
+                let el = area.querySelector(`[data-id="${f.id}"]`);
+                if (!el) { el = document.createElement('div'); el.className = 'canvas-field'; el.dataset.id = f.id; el.draggable = true; el.onclick = () => selectField(f.id); el.ondragstart = e => { e.dataTransfer.setData('fid', f.id); el.style.opacity = '.4'; }; el.ondragend = () => el.style.opacity = '1'; el.ondragover = e => { e.preventDefault(); el.style.borderColor = 'var(--accent)'; }; el.ondragleave = () => el.style.borderColor = ''; el.ondrop = e => { e.preventDefault(); el.style.borderColor = ''; reorder(e.dataTransfer.getData('fid'), f.id); }; area.appendChild(el); }
+                el.classList.toggle('sel', f.id === selId);
+                el.innerHTML = getPreview(f) + `<div class="cf-actions"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();mv('${f.id}',-1)" ${i === 0 ? 'disabled' : ''} title="Up">↑</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();mv('${f.id}',1)" ${i === fields.length - 1 ? 'disabled' : ''} title="Down">↓</button><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();dup('${f.id}')" title="Duplicate">⊕</button><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="event.stopPropagation();del('${f.id}')" title="Delete">✕</button></div>`;
+                if (area.children[i] !== el) area.appendChild(el);
+            });
+        }
+
+        function getPreview(f) {
+            if (f.type === 'heading') return `<div style="font-size:15px;font-weight:700;margin:0">${DocmoAPI.escH(f.label || 'Heading')}</div>`;
+            if (f.type === 'divider') return `<hr style="border-color:var(--border)">`;
+            const optPreview = f.type === 'radio' || f.type === 'checkbox' ? (f.options || []).slice(0, 2).map(o => `<div style="font-size:11px;margin-top:3px">${f.type === 'radio' ? '◯' : '☐'} ${DocmoAPI.escH(o)}</div>`).join('') : '';
+            const inputPreview = f.type === 'dropdown' ? `<div class="cf-preview">${(f.options || ['Select...'])[0]} ▾</div>` : f.type === 'rating' ? `<div style="font-size:18px;color:var(--yellow);margin-top:4px">★★★★★</div>` : f.type === 'file' ? `<div class="cf-preview" style="text-align:center">⬆ Click to upload</div>` : f.type === 'signature' ? `<div class="cf-preview" style="text-align:center;height:32px;line-height:32px">Sign here</div>` : (!optPreview ? `<div class="cf-preview">${DocmoAPI.escH(f.placeholder || '...')}</div>` : '');
+            return `<div class="cf-label">${DocmoAPI.escH(f.label || f.type)}<span class="cf-type">${f.type}</span>${f.required ? '<span style="color:var(--red);font-size:10px;margin-left:auto">required</span>' : ''}</div>${inputPreview}${optPreview}`;
+        }
+
+        function selectField(id) { selId = id; renderCanvas(); const f = fields.find(f => f.id === id); if (f) renderProps(f); }
+
+        function renderProps(f) {
+            const hasOpts = ['radio', 'checkbox', 'dropdown'].includes(f.type);
+            const hasPh = ['text', 'paragraph', 'email', 'phone', 'number'].includes(f.type);
+            document.getElementById('selectedProps').innerHTML = `
+      <div class="props-label">Field Properties</div>
+      <div class="field"><label class="label">Label</label><input class="input" id="pp_label" value="${DocmoAPI.escA(f.label || '')}" oninput="pf('${f.id}','label',this.value)"></div>
+      ${hasPh ? `<div class="field"><label class="label">Placeholder</label><input class="input" id="pp_ph" value="${DocmoAPI.escA(f.placeholder || '')}" oninput="pf('${f.id}','placeholder',this.value)"></div>` : ''}
+      <div class="field"><label class="label">Help Text</label><input class="input" id="pp_help" value="${DocmoAPI.escA(f.helpText || '')}" oninput="pf('${f.id}','helpText',this.value)"></div>
+      <label class="flex items-center gap-8 mb-12" style="font-size:12.5px;cursor:pointer"><input type="checkbox" class="toggle" ${f.required ? 'checked' : ''} onchange="pf('${f.id}','required',this.checked)"> Required</label>
+      ${hasOpts ? `<div class="field"><label class="label">Options</label><div id="optList">${(f.options || []).map((o, i) => `<div class="opt-row"><input value="${DocmoAPI.escA(o)}" oninput="po('${f.id}',${i},this.value)"><button class="btn btn-ghost btn-icon btn-sm" onclick="ro('${f.id}',${i})">✕</button></div>`).join('')}</div><button class="btn btn-ghost btn-sm mt-8" onclick="ao('${f.id}')">+ Add Option</button></div>` : ''}
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div class="props-label">Conditional Logic</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:8px">Show this field when:</div>
+        <select class="input" style="font-size:12.5px;margin-bottom:6px" id="condField" onchange="markUnsaved()">
+          <option value="">— Always show —</option>
+          ${fields.filter(x => x.id !== f.id && ['radio', 'dropdown', 'checkbox'].includes(x.type)).map(x => `<option value="${x.id}" ${f.condition?.fieldId === x.id ? 'selected' : ''}>${DocmoAPI.escH(x.label)}</option>`).join('')}
+        </select>
+        ${fields.find(x => x.id === (document.getElementById('condField')?.value)) ? `<input class="input" style="font-size:12.5px" id="condVal" placeholder="equals value..." value="${DocmoAPI.escA(f.condition?.value || '')}" oninput="pfc('${f.id}')">` : ''}</div>`;
+        }
+
+        function pf(id, k, v) { const f = fields.find(f => f.id === id); if (f) { f[k] = v; markUnsaved(); renderCanvas(); } }
+        function po(id, i, v) { const f = fields.find(f => f.id === id); if (f) { f.options = f.options || []; f.options[i] = v; markUnsaved(); } }
+        function ao(id) { const f = fields.find(f => f.id === id); if (f) { f.options = f.options || []; f.options.push('Option ' + (f.options.length + 1)); markUnsaved(); renderProps(f); renderCanvas(); } }
+        function ro(id, i) { const f = fields.find(f => f.id === id); if (f) { f.options.splice(i, 1); markUnsaved(); renderProps(f); renderCanvas(); } }
+        function pfc(id) { const fid = document.getElementById('condField')?.value, val = document.getElementById('condVal')?.value; const f = fields.find(f => f.id === id); if (f) { f.condition = fid ? { fieldId: fid, value: val } : null; markUnsaved(); } }
+        function del(id) { fields = fields.filter(f => f.id !== id); if (selId === id) { selId = null; document.getElementById('selectedProps').innerHTML = '<div style="text-align:center;color:var(--text-4);font-size:13px;padding:20px 0">Select a field</div>'; } markUnsaved(); renderCanvas(); }
+        function dup(id) { const f = fields.find(x => x.id === id); if (!f) return; const c = { ...JSON.parse(JSON.stringify(f)), id: 'f_' + Date.now() }; const i = fields.findIndex(x => x.id === id); fields.splice(i + 1, 0, c); markUnsaved(); renderCanvas(); }
+        function mv(id, d) { const i = fields.findIndex(f => f.id === id); const n = i + d; if (n < 0 || n >= fields.length) return;[fields[i], fields[n]] = [fields[n], fields[i]]; markUnsaved(); renderCanvas(); }
+        function reorder(fid, tid) { const fi = fields.findIndex(f => f.id === fid), ti = fields.findIndex(f => f.id === tid); if (fi === -1 || ti === -1) return; const [item] = fields.splice(fi, 1); fields.splice(ti, 0, item); markUnsaved(); renderCanvas(); }
+
+        // Modals
+        function openShare() { const url = `${location.origin}/form/${formId}`; document.getElementById('shareUrl').value = url; document.getElementById('embedCode').value = `<iframe src="${url}" width="100%" height="600" frameborder="0"></iframe>`; document.getElementById('shareModal').classList.add('open'); }
+        function openAI() { document.getElementById('aiModal').classList.add('open'); setTimeout(() => document.getElementById('aiTxt').focus(), 100); }
+        function openQR() {
+            document.getElementById('qrModal').classList.add('open');
+            const url = `${location.origin}/form/${formId}`;
+            const qc = document.getElementById('qrContainer'); qc.innerHTML = '';
+            QRCode.toCanvas(url, { width: 200, margin: 2 }, function (err, canvas) { if (!err) qc.appendChild(canvas); });
+        }
+        function downloadQR() { const canvas = document.getElementById('qrContainer').querySelector('canvas'); if (!canvas) return; const a = document.createElement('a'); a.href = canvas.toDataURL(); a.download = 'form-qr.png'; a.click(); }
+        async function runAIGenerate() {
+            const p = document.getElementById('aiTxt').value.trim(); if (!p) { toast('Enter a description', 'warning'); return; }
+            const btn = document.getElementById('aiGenBtn'); btn.textContent = 'Generating...'; btn.disabled = true;
+            try { const r = await DocmoAI.generateForm(p); if (r.fields?.length) { if (document.getElementById('aiReplace').checked) fields = r.fields; else fields = [...fields, ...r.fields]; if (r.title && (!document.getElementById('ftitle').value || document.getElementById('ftitle').value === 'Untitled Form')) document.getElementById('ftitle').value = r.title; markUnsaved(); renderCanvas(); document.getElementById('aiModal').classList.remove('open'); toast(`${r.fields.length} fields added`, 'success'); } else toast('AI returned no fields', 'warning'); }
+            catch (e) { toast('AI Error: ' + e.message, 'error'); }
+            finally { btn.textContent = 'Generate Fields'; btn.disabled = false; }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard – Docmo</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="js/db.js"></script>
+    <script src="js/ai.js"></script>
+    <style>
+        body {
+            background: var(--bg-primary);
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 14px;
+            min-width: 260px;
+        }
+
+        .search-bar input {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            flex: 1;
+            width: 100%;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 32px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        /* AI prompt area */
+        .ai-banner {
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.12), rgba(139, 92, 246, 0.06));
+            border: 1px solid rgba(108, 99, 255, 0.25);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .ai-input-row {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .ai-input-row input {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        /* Form card menus */
+        .form-card-menu {
+            position: absolute;
+            right: 14px;
+            top: 14px;
+            z-index: 5;
+        }
+
+        .form-card-menu-btn {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .form-card-menu-btn:hover {
+            background: var(--border);
+            color: var(--text-primary);
+        }
+
+        .form-card-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 4px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 6px;
+            min-width: 160px;
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+        }
+
+        .form-card-dropdown.open {
+            display: block;
+        }
+
+        .form-card-dropdown a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .form-card-dropdown a:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .form-card-dropdown .danger:hover {
+            background: var(--rose-soft);
+            color: var(--rose);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .empty-icon {
+            font-size: 56px;
+            margin-bottom: 12px;
+        }
+
+        /* Status filter toggle */
+        .filter-tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-secondary);
+            padding: 4px;
+            border-radius: var(--radius-sm);
+        }
+
+        .filter-tab {
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-tab.active {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Icon picker */
+        .icon-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .icon-opt {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .icon-opt:hover,
+        .icon-opt.selected {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 999;
+            background: var(--accent);
+            color: white;
+            animation: fadeInUp 0.3s ease;
+            font-size: 14px;
+        }
+
+        @media(max-width:768px) {
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <a href="index.html" class="sidebar-logo">
+            <div class="logo-icon">📋</div><span>Docmo</span>
+        </a>
+        <nav class="sidebar-nav">
+            <div class="sidebar-section-title">Main</div>
+            <a href="dashboard.html" class="nav-item active"><span class="nav-icon">🏠</span> Dashboard</a>
+            <a href="dashboard.html" class="nav-item" id="sideMyForms"><span class="nav-icon">📋</span> My Forms <span
+                    class="nav-badge badge badge-accent" id="sideFormCount">0</span></a>
+            <a href="templates.html" class="nav-item"><span class="nav-icon">🎨</span> Templates</a>
+            <a href="responses.html" class="nav-item"><span class="nav-icon">📊</span> Responses</a>
+            <a href="export.html" class="nav-item"><span class="nav-icon">📥</span> Export</a>
+            <div class="sidebar-section-title">Account</div>
+            <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+            <a href="settings.html#api" class="nav-item"><span class="nav-icon">🔑</span> API Keys</a>
+            <a href="settings.html#team" class="nav-item"><span class="nav-icon">👥</span> Team</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="storage-bar">
+                <div class="flex justify-between text-xs text-muted mb-4"><span>Storage used</span><span
+                        id="storageLabel">0 / 10 forms</span></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="storageBar" style="width:0%"></div>
+                </div>
+            </div>
+            <div class="user-info mt-12">
+                <div class="avatar" id="userAvatar">JS</div>
+                <div>
+                    <div style="font-size:13px;font-weight:600" id="userName">John Smith</div>
+                    <div style="font-size:11px;color:var(--text-muted)" id="userPlan">Pro Plan</div>
+                </div>
+                <a href="login.html" style="margin-left:auto;font-size:18px;color:var(--text-muted);cursor:pointer"
+                    title="Logout" onclick="logout()">🚪</a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+        <div class="topbar">
+            <div>
+                <div style="font-size:24px;font-weight:800" id="greeting">Good morning! 👋</div>
+                <div style="font-size:14px;color:var(--text-secondary);margin-top:2px" id="dateLabel"></div>
+            </div>
+            <div class="flex items-center gap-12 flex-wrap">
+                <div class="search-bar"><span>🔍</span><input id="searchInput" placeholder="Search forms..."
+                        oninput="filterForms()"></div>
+                <button class="btn btn-ghost btn-sm" onclick="toggleTheme()">🌙</button>
+            </div>
+        </div>
+
+        <!-- AI Generator -->
+        <div class="ai-banner">
+            <span style="font-size:28px">🤖</span>
+            <div style="flex:1">
+                <div style="font-size:15px;font-weight:700;margin-bottom:2px">AI Form Generator</div>
+                <div style="font-size:13px;color:var(--text-secondary)">Describe your form and AI builds it instantly
+                </div>
+            </div>
+            <div class="ai-input-row">
+                <input id="aiPromptInput" placeholder='e.g. "Create a job application form for a tech startup"'
+                    onkeydown="if(event.key==='Enter')runAI()">
+                <button class="btn btn-primary" id="aiBtn" onclick="runAI()">✨ Generate</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid stagger" id="statsGrid">
+            <div class="card stat-card purple">
+                <div class="stat-icon" style="background:var(--accent-soft)">📋</div>
+                <div class="stat-value" id="statForms">0</div>
+                <div class="stat-label">Total Forms</div>
+                <div class="stat-change up" id="statFormsNote"></div>
+            </div>
+            <div class="card stat-card green">
+                <div class="stat-icon" style="background:var(--emerald-soft)">📨</div>
+                <div class="stat-value" id="statResponses">0</div>
+                <div class="stat-label">Total Responses</div>
+                <div class="stat-change up" id="statRespNote"></div>
+            </div>
+            <div class="card stat-card amber">
+                <div class="stat-icon" style="background:var(--amber-soft)">⚡</div>
+                <div class="stat-value" id="statActive">0</div>
+                <div class="stat-label">Active Forms</div>
+                <div class="stat-change up"></div>
+            </div>
+            <div class="card stat-card sky">
+                <div class="stat-icon" style="background:var(--sky-soft)">🕐</div>
+                <div class="stat-value" id="statLast">—</div>
+                <div class="stat-label">Last Response</div>
+                <div class="stat-change up"></div>
+            </div>
+        </div>
+
+        <!-- Quick Actions + Filter -->
+        <div class="flex justify-between items-center flex-wrap gap-12 mb-16">
+            <div class="quick-actions" style="margin-bottom:0">
+                <button class="btn btn-primary" onclick="openNewFormModal()">✨ New Docmo File</button>
+                <a href="templates.html" class="btn btn-secondary">📋 Templates</a>
+                <button class="btn btn-secondary" onclick="window.location='export.html'">📥 Export Data</button>
+            </div>
+            <div class="filter-tabs">
+                <div class="filter-tab active" onclick="setFilter('all',this)">All</div>
+                <div class="filter-tab" onclick="setFilter('active',this)">Active</div>
+                <div class="filter-tab" onclick="setFilter('draft',this)">Draft</div>
+                <div class="filter-tab" onclick="setFilter('closed',this)">Closed</div>
+            </div>
+        </div>
+
+        <!-- Forms Grid -->
+        <div class="section-header mb-16">
+            <div class="section-title">My Forms</div>
+        </div>
+        <div class="forms-grid" id="formsGrid"></div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display:none">
+            <div class="empty-icon">📭</div>
+            <div style="font-size:18px;font-weight:700;margin-bottom:8px">No forms found</div>
+            <p style="font-size:14px;margin-bottom:20px">Create your first Docmo form to start collecting responses</p>
+            <button class="btn btn-primary btn-lg" onclick="openNewFormModal()">✨ Create New Form</button>
+        </div>
+    </main>
+
+    <!-- NEW / EDIT FORM MODAL -->
+    <div class="modal-overlay" id="formModal" onclick="closeModal(event,'formModal')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="formModalTitle">Create New Form</div>
+                <button class="btn btn-ghost btn-sm" onclick="closeModalById('formModal')">✕</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px">
+                <div class="input-group">
+                    <label class="input-label">Form Title <span style="color:var(--rose)">*</span></label>
+                    <input type="text" class="input-field" id="newFormTitle"
+                        placeholder="e.g. Customer Feedback Survey">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Description</label>
+                    <textarea class="input-field" id="newFormDesc" placeholder="Brief description of this form..."
+                        style="min-height:70px"></textarea>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Icon</label>
+                    <div class="icon-picker" id="iconPicker"></div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Status</label>
+                    <select class="input-field" id="newFormStatus">
+                        <option value="draft">Draft</option>
+                        <option value="active">Active</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:24px;justify-content:flex-end">
+                <button class="btn btn-secondary" onclick="closeModalById('formModal')">Cancel</button>
+                <button class="btn btn-primary" id="formModalBtn" onclick="submitFormModal()">Create & Open
+                    Builder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE CONFIRM MODAL -->
+    <div class="modal-overlay" id="deleteModal" onclick="closeModal(event,'deleteModal')">
+        <div class="modal" style="max-width:400px" onclick="event.stopPropagation()">
+            <div style="text-align:center;padding:8px 0 20px">
+                <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+                <div style="font-size:20px;font-weight:800;margin-bottom:8px">Delete Form?</div>
+                <p style="font-size:14px;color:var(--text-secondary)" id="deleteMsg">This will permanently delete the
+                    form and all its responses. This cannot be undone.</p>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+                <button class="btn btn-secondary" onclick="closeModalById('deleteModal')">Cancel</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">🗑 Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFilter = 'all';
+        let editingFormId = null;
+        let selectedIcon = '📋';
+        const ICONS = ['📋', '⭐', '💼', '📬', '🎉', '📊', '🏥', '🎓', '💡', '🔍', '📝', '🤝', '🎯', '💬', '📅', '🛒', '🌍', '🔔', '🏆', '📸'];
+
+        DocmoDB.init();
+
+        // ── Startup ─────────────────────────────────────────────────────────────
+        window.addEventListener('DOMContentLoaded', () => {
+            loadUser();
+            setGreeting();
+            renderForms();
+            renderIconPicker();
+            // Apply saved theme
+            const user = DocmoDB.getUser();
+            if (user.theme) document.documentElement.setAttribute('data-theme', user.theme);
+        });
+
+        function loadUser() {
+            const u = DocmoDB.getUser();
+            document.getElementById('userName').textContent = u.name || 'User';
+            document.getElementById('userAvatar').textContent = u.avatar || 'U';
+            document.getElementById('userPlan').textContent = (u.plan || 'Free') + ' Plan';
+        }
+
+        function setGreeting() {
+            const h = new Date().getHours();
+            const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+            const u = DocmoDB.getUser();
+            document.getElementById('greeting').textContent = `${greet}, ${u.firstName || u.name?.split(' ')[0] || 'there'}! 👋`;
+            document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        // ── Render ───────────────────────────────────────────────────────────────
+        function renderForms(query = '') {
+            const forms = DocmoDB.getForms();
+            const responses = DocmoDB.getResponses();
+            const totalResp = forms.reduce((s, f) => s + (f.responseCount || 0), 0);
+            const active = forms.filter(f => f.status === 'active').length;
+            const allResp = responses;
+            const lastResp = allResp[0] ? DocmoDB._relTime(allResp[0].submittedAt) : 'Never';
+
+            // Stats
+            document.getElementById('statForms').textContent = forms.length;
+            document.getElementById('statFormsNote').textContent = '↑ ' + forms.filter(f => { const d = new Date(f.createdAt); return (Date.now() - d) < 7 * 86400000; }).length + ' this week';
+            document.getElementById('statResponses').textContent = totalResp;
+            document.getElementById('statRespNote').textContent = '↑ ' + allResp.filter(r => { return (Date.now() - new Date(r.submittedAt)) < 86400000; }).length + ' today';
+            document.getElementById('statActive').textContent = active;
+            document.getElementById('statLast').textContent = lastResp;
+            document.getElementById('sideFormCount').textContent = forms.length;
+
+            // Storage indicator
+            document.getElementById('storageLabel').textContent = forms.length + ' / unlimited forms';
+            document.getElementById('storageBar').style.width = Math.min((forms.length / 20) * 100, 100) + '%';
+
+            // Filter + search
+            let filtered = forms;
+            if (currentFilter !== 'all') filtered = filtered.filter(f => f.status === currentFilter);
+            if (query) filtered = filtered.filter(f => f.title.toLowerCase().includes(query.toLowerCase()) || (f.description || '').toLowerCase().includes(query.toLowerCase()));
+
+            const grid = document.getElementById('formsGrid');
+            grid.innerHTML = '';
+            document.getElementById('emptyState').style.display = filtered.length ? 'none' : 'block';
+
+            filtered.forEach((f, i) => {
+                const card = document.createElement('div');
+                card.className = 'card form-card';
+                card.style.animationDelay = (i * 0.05) + 's';
+                card.style.cursor = 'pointer';
+                card.style.opacity = '0';
+                card.style.animation = `fadeInUp 0.4s ${i * 0.06}s ease forwards`;
+                const statusColors = { active: 'badge-green', draft: 'badge-amber', closed: 'badge-red' };
+                const timeago = DocmoDB._relTime(f.updatedAt || f.createdAt);
+                card.innerHTML = `
+          <div class="form-card-menu">
+            <button class="form-card-menu-btn" onclick="event.stopPropagation();toggleMenu('menu_${f.id}')">⋯</button>
+            <div class="form-card-dropdown" id="menu_${f.id}">
+              <a onclick="event.stopPropagation();openBuilder('${f.id}')">✏️ Edit Form</a>
+              <a onclick="event.stopPropagation();openResponses('${f.id}')">📊 View Responses</a>
+              <a onclick="event.stopPropagation();openExport('${f.id}')">📥 Export Data</a>
+              <a onclick="event.stopPropagation();copyShareLink('${f.shareLink}','${f.id}')">🔗 Copy Link</a>
+              <a onclick="event.stopPropagation();duplicateForm('${f.id}')">⧉ Duplicate</a>
+              <a onclick="event.stopPropagation();openEditMeta('${f.id}')" >⚙️ Edit Info</a>
+              <a class="danger" onclick="event.stopPropagation();confirmDelete('${f.id}','${f.title.replace(/'/g, "\\'")}')">🗑 Delete</a>
+            </div>
+          </div>
+          <div class="form-card-header">
+            <div class="form-icon" style="background:rgba(108,99,255,0.12);font-size:22px">${f.icon || '📋'}</div>
+            <span class="badge ${statusColors[f.status] || 'badge-amber'}">${f.status || 'draft'}</span>
+          </div>
+          <div class="form-card-title">${escHtml(f.title)}</div>
+          <div class="form-card-desc">${escHtml(f.description || 'No description')}</div>
+          <div class="form-card-meta" style="margin-top:auto">
+            <span>📨 ${f.responseCount || 0} response${f.responseCount !== 1 ? 's' : ''}</span>
+            <span>${timeago}</span>
+          </div>`;
+                card.addEventListener('click', () => openResponses(f.id));
+                grid.appendChild(card);
+            });
+
+            // Click-outside close menus
+            document.addEventListener('click', closeAllMenus, { once: false });
+        }
+
+        function closeAllMenus(e) {
+            if (!e.target.classList.contains('form-card-menu-btn')) {
+                document.querySelectorAll('.form-card-dropdown.open').forEach(m => m.classList.remove('open'));
+            }
+        }
+
+        // ── Actions ──────────────────────────────────────────────────────────────
+        function toggleMenu(id) {
+            const menu = document.getElementById(id);
+            const wasOpen = menu.classList.contains('open');
+            document.querySelectorAll('.form-card-dropdown.open').forEach(m => m.classList.remove('open'));
+            if (!wasOpen) menu.classList.add('open');
+        }
+
+        function openBuilder(id) { window.location = 'builder.html?id=' + id; }
+        function openResponses(id) { window.location = 'responses.html?id=' + id; }
+        function openExport(id) { window.location = 'export.html?id=' + id; }
+
+        function copyShareLink(shareLink, formId) {
+            const form = DocmoDB.getForm(formId);
+            const url = window.location.origin + window.location.pathname.replace('dashboard.html', '') + 'form.html?id=' + formId;
+            navigator.clipboard.writeText(url).catch(() => { });
+            showToast('🔗 Link copied to clipboard!', 'var(--emerald)');
+        }
+
+        function duplicateForm(id) {
+            const newForm = DocmoDB.duplicateForm(id);
+            if (newForm) { renderForms(); showToast('⧉ Form duplicated!', 'var(--accent)'); }
+        }
+
+        function confirmDelete(id, title) {
+            document.getElementById('deleteMsg').textContent = `Delete "${title}" and all its responses? This cannot be undone.`;
+            document.getElementById('confirmDeleteBtn').onclick = () => {
+                DocmoDB.deleteForm(id);
+                closeModalById('deleteModal');
+                renderForms();
+                showToast('🗑 Form deleted', 'var(--rose)');
+            };
+            document.getElementById('deleteModal').classList.add('open');
+        }
+
+        function setFilter(f, el) {
+            currentFilter = f;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            renderForms(document.getElementById('searchInput').value);
+        }
+
+        function filterForms() { renderForms(document.getElementById('searchInput').value); }
+
+        // ── New / Edit Form Modal ─────────────────────────────────────────────────
+        function renderIconPicker() {
+            const picker = document.getElementById('iconPicker');
+            picker.innerHTML = '';
+            ICONS.forEach(ic => {
+                const el = document.createElement('div');
+                el.className = 'icon-opt' + (ic === selectedIcon ? ' selected' : '');
+                el.textContent = ic;
+                el.onclick = () => { selectedIcon = ic; document.querySelectorAll('.icon-opt').forEach(e => e.classList.remove('selected')); el.classList.add('selected'); };
+                picker.appendChild(el);
+            });
+        }
+
+        function openNewFormModal() {
+            editingFormId = null;
+            selectedIcon = '📋';
+            document.getElementById('formModalTitle').textContent = 'Create New Form';
+            document.getElementById('formModalBtn').textContent = 'Create & Open Builder';
+            document.getElementById('newFormTitle').value = '';
+            document.getElementById('newFormDesc').value = '';
+            document.getElementById('newFormStatus').value = 'draft';
+            renderIconPicker();
+            document.getElementById('formModal').classList.add('open');
+            setTimeout(() => document.getElementById('newFormTitle').focus(), 100);
+        }
+
+        function openEditMeta(id) {
+            const form = DocmoDB.getForm(id);
+            if (!form) return;
+            editingFormId = id;
+            selectedIcon = form.icon || '📋';
+            document.getElementById('formModalTitle').textContent = 'Edit Form Info';
+            document.getElementById('formModalBtn').textContent = 'Save Changes';
+            document.getElementById('newFormTitle').value = form.title;
+            document.getElementById('newFormDesc').value = form.description || '';
+            document.getElementById('newFormStatus').value = form.status || 'draft';
+            renderIconPicker();
+            document.getElementById('formModal').classList.add('open');
+        }
+
+        function submitFormModal() {
+            const title = document.getElementById('newFormTitle').value.trim();
+            if (!title) { document.getElementById('newFormTitle').focus(); document.getElementById('newFormTitle').style.borderColor = 'var(--rose)'; return; }
+            document.getElementById('newFormTitle').style.borderColor = '';
+            const data = { title, description: document.getElementById('newFormDesc').value.trim(), icon: selectedIcon, status: document.getElementById('newFormStatus').value };
+
+            if (editingFormId) {
+                DocmoDB.updateForm(editingFormId, data);
+                closeModalById('formModal');
+                renderForms();
+                showToast('✅ Form updated!', 'var(--emerald)');
+            } else {
+                const form = DocmoDB.createForm(data);
+                closeModalById('formModal');
+                window.location = 'builder.html?id=' + form.id;
+            }
+        }
+
+        // ── AI Generation ────────────────────────────────────────────────────────
+        async function runAI() {
+            const prompt = document.getElementById('aiPromptInput').value.trim();
+            if (!prompt) { document.getElementById('aiPromptInput').focus(); return; }
+            const btn = document.getElementById('aiBtn');
+            btn.textContent = '⏳ Generating...';
+            btn.disabled = true;
+            try {
+                const result = await DocmoAI.generateForm(prompt);
+                const form = DocmoDB.createForm({
+                    title: result.title || 'AI Generated Form',
+                    description: result.description || '',
+                    fields: (result.fields || []).map((f, i) => ({ ...f, id: 'f' + (i + 1) })),
+                    status: 'draft',
+                    icon: '🤖'
+                });
+                showToast('🤖 AI form created!', 'var(--accent)');
+                setTimeout(() => window.location = 'builder.html?id=' + form.id, 800);
+            } catch (err) {
+                showToast('❌ AI Error: ' + err.message, 'var(--rose)');
+            } finally {
+                btn.textContent = '✨ Generate';
+                btn.disabled = false;
+            }
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────────────
+        function closeModal(e, id) { if (e.target === document.getElementById(id)) closeModalById(id); }
+        function closeModalById(id) { document.getElementById(id).classList.remove('open'); }
+
+        function toggleTheme() {
+            const h = document.documentElement;
+            const t = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            h.setAttribute('data-theme', t);
+            DocmoDB.updateUser({ theme: t });
+        }
+
+        function logout() { if (confirm('Log out?')) window.location = 'login.html'; }
+
+        function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+        function showToast(msg, color = 'var(--accent)') {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.style.background = color;
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.style.opacity = '0', 2500);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        // Allow Enter key in new form modal
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { closeModalById('formModal'); closeModalById('deleteModal'); }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form – SnapyForm</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="/js/api.js"></script>
+    <style>
+        body {
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh
+        }
+
+        .form-shell {
+            width: 100%;
+            max-width: 580px;
+            padding: 40px 20px 60px
+        }
+
+        .form-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg)
+        }
+
+        .form-header {
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            padding: 24px 24px 20px
+        }
+
+        .form-body {
+            padding: 24px
+        }
+
+        .form-field {
+            margin-bottom: 20px
+        }
+
+        .field-label {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 7px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .field-req {
+            color: var(--red);
+            font-size: 11px
+        }
+
+        .field-help {
+            font-size: 12px;
+            color: var(--text-3);
+            margin-top-4px;
+            margin-bottom: 6px
+        }
+
+        .rating-wrap {
+            display: flex;
+            gap: 6px
+        }
+
+        .star {
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-4);
+            transition: var(--transition)
+        }
+
+        .star.lit {
+            color: var(--yellow)
+        }
+
+        .option-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 6px;
+            font-size: 13.5px;
+            color: var(--text-2)
+        }
+
+        .option-btn:hover,
+        .option-btn.selected {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            color: var(--text)
+        }
+
+        .option-marker {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1.5px solid var(--border-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0
+        }
+
+        .option-btn.selected .option-marker {
+            background: var(--accent);
+            border-color: var(--accent)
+        }
+
+        .option-btn.selected .option-marker::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            display: block
+        }
+
+        .progress-bar {
+            height: 3px;
+            background: var(--surface-3);
+            margin-bottom: 0
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width .3s ease
+        }
+
+        .logo-footer {
+            font-size: 12px;
+            color: var(--text-4);
+            text-align: center;
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form-shell" id="formShell">
+        <div style="text-align:center;padding:80px;color:var(--text-3)">Loading form...</div>
+    </div>
+    <div class="logo-footer">
+        <div class="logo-mark" style="width:18px;height:18px;font-size:9px">S</div> Powered by SnapyForm
+    </div>
+
+    <script>
+        const formId = location.pathname.split('/form/')[1]?.split('?')[0];
+        let form = null, formValues = {}, startTime = Date.now();
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!formId) { showError('Invalid form link'); return; }
+            try { form = await DocmoAPI.getForm(formId); renderForm(); }
+            catch (e) { showError(e.message === 'Form not found' ? 'This form does not exist or has been deleted.' : 'Failed to load form. Please try again.'); }
+        });
+
+        function renderForm() {
+            if (form.status === 'closed') { document.getElementById('formShell').innerHTML = `<div class="form-card"><div class="form-header"><div style="font-size:17px;font-weight:700;color:#fff">${DocmoAPI.escH(form.title)}</div></div><div class="form-body" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🔒</div><div style="font-size:15px;font-weight:600;margin-bottom:8px">Form Closed</div><div style="font-size:13px;color:var(--text-3)">This form is no longer accepting responses.</div></div></div>`; return; }
+            const fields = form.fields || [];
+            const required = fields.filter(f => f.required).length;
+            document.title = form.title + ' – SnapyForm';
+            const html = `<div class="form-card">
+      ${form.showProgress ? `<div class="progress-bar"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>` : ''}
+      <div class="form-header">
+        <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:4px">${DocmoAPI.escH(form.title)}</div>
+        ${form.description ? `<div style="font-size:13px;color:rgba(255,255,255,.7)">${DocmoAPI.escH(form.description)}</div>` : ''}
+        ${required ? `<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:8px">${required} required field${required !== 1 ? 's' : ''}</div>` : ''}
+      </div>
+      <div class="form-body" id="formBody">
+        <form id="theForm" onsubmit="submitForm(event)">
+          ${fields.map(f => renderField(f)).join('')}
+          <div id="errMsg" style="display:none;color:var(--red);font-size:13px;margin-bottom:12px;padding:10px 14px;background:var(--red-soft);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius)"></div>
+          <button type="submit" class="btn btn-primary btn-xl btn-full" id="submitBtn">${form.submitLabel || 'Submit Response'}</button>
+        </form>
+      </div>
+    </div>`;
+            document.getElementById('formShell').innerHTML = html;
+            initRatings(fields);
+            if (form.showProgress) updateProgress();
+            document.getElementById('theForm').addEventListener('change', updateProgress);
+        }
+
+        function renderField(f) {
+            if (f.type === 'heading') return `<div style="font-size:16px;font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)">${DocmoAPI.escH(f.label || '')}</div>`;
+            if (f.type === 'divider') return `<hr class="divider">`;
+            const req = f.required ? `<span class="field-req">*</span>` : '';
+            const help = f.helpText ? `<div class="field-help">${DocmoAPI.escH(f.helpText)}</div>` : '';
+            let inp = '';
+            if (['text', 'email', 'phone', 'number'].includes(f.type)) inp = `<input type="${f.type === 'text' ? 'text' : f.type === 'email' ? 'email' : f.type === 'phone' ? 'tel' : 'number'}" class="input" id="f_${f.id}" name="${DocmoAPI.escA(f.label)}" placeholder="${DocmoAPI.escA(f.placeholder || '')}" ${f.required ? 'required' : ''} oninput="fv('${f.id}',this.value)">`;
+            else if (f.type === 'paragraph') inp = `<textarea class="input" id="f_${f.id}" name="${DocmoAPI.escA(f.label)}" placeholder="${DocmoAPI.escA(f.placeholder || '')}" style="min-height:80px" ${f.required ? 'required' : ''}  oninput="fv('${f.id}',this.value)"></textarea>`;
+            else if (f.type === 'date') inp = `<input type="date" class="input" id="f_${f.id}" name="${DocmoAPI.escA(f.label)}" ${f.required ? 'required' : ''} onchange="fv('${f.id}',this.value)">`;
+            else if (f.type === 'dropdown') inp = `<select class="input" id="f_${f.id}" ${f.required ? 'required' : ''} onchange="fv('${f.id}',this.value)"><option value="">Select an option</option>${(f.options || []).map(o => `<option value="${DocmoAPI.escA(o)}">${DocmoAPI.escH(o)}</option>`).join('')}</select>`;
+            else if (f.type === 'radio') inp = (f.options || []).map(o => `<div class="option-btn" id="opt_${f.id}_${DocmoAPI.escA(o).replace(/\s/g, '_')}" onclick="selectOpt('${f.id}','${DocmoAPI.escA(o)}',this)"><div class="option-marker"></div>${DocmoAPI.escH(o)}</div>`).join('');
+            else if (f.type === 'checkbox') inp = (f.options || []).map(o => `<label style="display:flex;align-items:center;gap:8px;padding:9px 0;cursor:pointer;font-size:13.5px"><input type="checkbox" value="${DocmoAPI.escA(o)}" style="accent-color:var(--accent)" onchange="toggleCb('${f.id}',this)"> ${DocmoAPI.escH(o)}</label>`).join('');
+            else if (f.type === 'rating') inp = `<div class="rating-wrap" data-fid="${f.id}">${[1, 2, 3, 4, 5].map(n => `<span class="star" data-val="${n}" onclick="setRating('${f.id}',${n})">★</span>`).join('')}</div>`;
+            else if (f.type === 'file') inp = `<input type="file" class="input" id="f_${f.id}" style="padding:8px" onchange="fv('${f.id}',this.files[0]?.name||'')">`;
+            else if (f.type === 'signature') inp = `<canvas id="f_${f.id}" style="width:100%;height:100px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);cursor:crosshair" width="560" height="100"></canvas><button type="button" class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="clearSig('${f.id}')">Clear</button>`;
+            return `<div class="form-field">${f.type !== 'heading' && f.type !== 'divider' ? `<div class="field-label">${DocmoAPI.escH(f.label || '')} ${req}</div>${help}` : ''}${inp}</div>`;
+        }
+
+        function fv(id, v) { formValues[id] = v; if (form.showProgress) updateProgress(); }
+        function selectOpt(id, val, el) { document.querySelectorAll(`[id^="opt_${id}_"]`).forEach(x => { x.classList.remove('selected'); x.querySelector('.option-marker').innerHTML = ''; }); el.classList.add('selected'); el.querySelector('.option-marker').innerHTML = '<div style="width:6px;height:6px;background:#fff;border-radius:50%"></div>'; fv(id, val); }
+        function toggleCb(id, cb) { const f = form.fields.find(f => f.id === id); const vals = (formValues[id] || '').split(', ').filter(Boolean); if (cb.checked) { if (!vals.includes(cb.value)) vals.push(cb.value); } else { const i = vals.indexOf(cb.value); if (i > -1) vals.splice(i, 1); } fv(id, vals.join(', ')); }
+        function setRating(id, n) { const wrap = document.querySelector(`[data-fid="${id}"]`); wrap.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('lit', i < n)); fv(id, String(n)); }
+        function initRatings(fields) { fields.filter(f => f.type === 'rating').forEach(f => { const wrap = document.querySelector(`[data-fid="${f.id}"]`); if (!wrap) return; wrap.querySelectorAll('.star').forEach((s, i, all) => { s.onmouseenter = () => all.forEach((x, j) => x.classList.toggle('lit', j <= i)); s.onmouseleave = () => { const v = formValues[f.id] || 0; all.forEach((x, j) => x.classList.toggle('lit', j < v)); }; }); }); }
+        function clearSig(id) { const c = document.getElementById('f_' + id); const ctx = c.getContext('2d'); ctx.clearRect(0, 0, c.width, c.height); fv(id, ''); let drawing = false; c.onmousedown = () => drawing = true; c.onmouseup = () => { drawing = false; c.getContext('2d').beginPath(); }; c.onmousemove = e => { if (!drawing) return; const r = c.getBoundingClientRect(), x = (e.clientX - r.left) * (c.width / r.width), y = (e.clientY - r.top) * (c.height / r.height); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = 'var(--text)'; ctx.lineTo(x, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, y); fv(id, 'sig_' + Date.now()); }; }
+        function updateProgress() { const fields = form.fields || []; const total = fields.filter(f => !['heading', 'divider'].includes(f.type)).length; if (!total) return; const filled = fields.filter(f => { if (['heading', 'divider'].includes(f.type)) return false; return !!formValues[f.id]; }).length; const pct = Math.round(filled / total * 100); const pb = document.getElementById('progressBar'); if (pb) pb.style.width = pct + '%'; }
+
+        async function submitForm(e) {
+            e.preventDefault();
+            const fields = form.fields || [];
+            for (const f of fields) { if (f.required && ['text', 'email', 'phone', 'number', 'paragraph', 'date', 'dropdown', 'radio'].includes(f.type)) { const v = formValues[f.id] || ''; if (!v.trim()) { showErr(`"${f.label}" is required.`); return; } } }
+            const data = {}; fields.forEach(f => { if (!['heading', 'divider'].includes(f.type)) { const inp = document.getElementById('f_' + f.id); const v = formValues[f.id] || (inp?.value || ''); if (v) data[f.label] = v; } });
+            if (!Object.keys(data).length) { showErr('Please fill in at least one field.'); return; }
+            const btn = document.getElementById('submitBtn'); btn.textContent = 'Submitting...'; btn.disabled = true;
+            try { await DocmoAPI.submitResponse(formId, data, Math.floor((Date.now() - startTime) / 1000)); showSuccess(); }
+            catch (e) { showErr(e.message || 'Submission failed.'); btn.textContent = 'Submit Response'; btn.disabled = false; }
+        }
+
+        function showErr(m) { const e = document.getElementById('errMsg'); e.textContent = m; e.style.display = 'block'; e.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        function showSuccess() { document.getElementById('formShell').innerHTML = `<div class="form-card"><div class="form-header"><div style="font-size:17px;font-weight:700;color:#fff">${DocmoAPI.escH(form.title)}</div></div><div class="form-body" style="text-align:center;padding:48px"><div style="width:52px;height:52px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:22px;color:#fff">✓</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">Response Submitted!</div><div style="font-size:13px;color:var(--text-3);max-width:280px;margin:0 auto;line-height:1.6">Thank you for completing this form. Your response has been recorded.</div></div></div>`; }
+        function showError(m) { document.getElementById('formShell').innerHTML = `<div class="form-card"><div class="form-body" style="text-align:center;padding:60px"><div style="font-size:32px;margin-bottom:14px">⚠</div><div style="font-size:15px;font-weight:600;margin-bottom:8px">Form Unavailable</div><div style="font-size:13px;color:var(--text-3)">${m}</div></div></div>`; }
+    </script>
+</body>
+
+</html>

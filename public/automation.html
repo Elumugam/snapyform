@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automations – SnapyForm</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="/js/api.js"></script>
+    <style>
+        .auto-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr 120px 100px 100px;
+            gap: 12px;
+            align-items: center;
+            padding: 11px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            transition: var(--transition)
+        }
+
+        .auto-row:hover {
+            background: var(--surface-2)
+        }
+
+        .condition-preview {
+            font-size: 12px;
+            font-family: monospace;
+            background: var(--surface-3);
+            padding: 4px 8px;
+            border-radius: 5px;
+            color: var(--accent-h)
+        }
+
+        .action-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 100px;
+            background: var(--blue-soft);
+            color: var(--blue);
+            text-transform: uppercase;
+            white-space: nowrap
+        }
+
+        .wh-row {
+            display: grid;
+            grid-template-columns: 2fr 2fr 100px 80px;
+            gap: 12px;
+            align-items: center;
+            padding: 11px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px
+        }
+
+        .action-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px
+        }
+
+        .action-option {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 12.5px;
+            transition: var(--transition)
+        }
+
+        .action-option:hover,
+        .action-option.selected {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            color: var(--accent-h)
+        }
+
+        .action-icon {
+            font-size: 20px;
+            margin-bottom: 6px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo" onclick="window.location='/'">
+                <div class="logo-mark">S</div><span class="logo-text">SnapyForm</span>
+            </div>
+            <div class="sidebar-section">
+                <div class="nav-item" onclick="window.location='/dashboard'">
+                    <div class="nav-icon-wrap">⊞</div><span>Dashboard</span>
+                </div>
+                <div class="nav-item active">
+                    <div class="nav-icon-wrap">⚡</div><span>Automations</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/responses'">
+                    <div class="nav-icon-wrap">≡</div><span>Responses</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/export'">
+                    <div class="nav-icon-wrap">↓</div><span>Export</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/settings'">
+                    <div class="nav-icon-wrap">◎</div><span>Settings</span>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-widget">
+                    <div class="user-avatar" id="uAvatar">?</div>
+                    <div>
+                        <div class="user-name" id="uName">...</div>
+                    </div><span style="margin-left:auto;font-size:13px;cursor:pointer"
+                        onclick="DocmoAPI.logout()">⏻</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="page-shell">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">Workflow Automation</div>
+                        <div class="page-subtitle">Trigger actions when form responses match conditions</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openNewModal()">+ New Rule</button>
+                </div>
+
+                <!-- TABS -->
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('rules',this)">Automation Rules</div>
+                    <div class="tab" onclick="switchTab('webhooks',this)">Webhooks</div>
+                    <div class="tab" onclick="switchTab('transform',this)">Data Transform</div>
+                </div>
+
+                <!-- RULES TAB -->
+                <div class="tab-content active" id="tab-rules">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Rules <span class="badge badge-gray" id="rulesCnt">0</span></div>
+                            <div style="font-size:12px;color:var(--text-3)">Rules fire automatically when a matching
+                                response is submitted</div>
+                        </div>
+                        <div class="auto-row" style="cursor:default">
+                            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">
+                                Name</div>
+                            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">
+                                Condition → Action</div>
+                            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">
+                                Form</div>
+                            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">
+                                Status</div>
+                            <div></div>
+                        </div>
+                        <div id="rulesTable">
+                            <div style="text-align:center;padding:40px;color:var(--text-4)">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WEBHOOKS TAB -->
+                <div class="tab-content" id="tab-webhooks" style="display:none">
+                    <div class="card mb-16">
+                        <div class="card-header">
+                            <div class="card-title">Webhooks</div><button class="btn btn-primary btn-sm"
+                                onclick="openWebhookModal()">+ Add Webhook</button>
+                        </div>
+                        <div class="wh-row" style="cursor:default">
+                            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">
+                                Name / URL</div>
+                            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">
+                                Form</div>
+                            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4)">
+                                Events</div>
+                            <div></div>
+                        </div>
+                        <div id="whTable">
+                            <div style="text-align:center;padding:40px;color:var(--text-4)">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="card card-body" style="border-color:var(--accent-soft)">
+                        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent-h)">📡 How
+                            Webhooks Work</div>
+                        <div style="font-size:12.5px;color:var(--text-3);line-height:1.8">When a form response is
+                            submitted, SnapyForm sends a <code
+                                style="background:var(--surface-3);padding:1px 5px;border-radius:3px">POST</code>
+                            request to your webhook URL with the response data in JSON format. Use this to integrate
+                            with Zapier, Make (Integromat), Slack, or any custom backend.</div>
+                    </div>
+                </div>
+
+                <!-- TRANSFORM TAB -->
+                <div class="tab-content" id="tab-transform" style="display:none">
+                    <div class="card mb-16">
+                        <div class="card-header">
+                            <div class="card-title">Smart Data Transform</div>
+                            <div style="font-size:12px;color:var(--text-3)">Create calculated fields from existing
+                                response data</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="field"><label class="label">Select Form</label><select class="input"
+                                    id="tfFormSel"></select></div>
+                            <div class="field"><label class="label">Formula <span
+                                        style="font-size:11px;color:var(--text-4);margin-left:4px">e.g. full_name =
+                                        First_Name + " " + Last_Name</span></label><input type="text" class="input"
+                                    id="tfFormula" placeholder='Example: full_name = "First Name" + " " + "Last Name"'>
+                            </div>
+                            <div class="field"><label class="label">Output Field Name (optional)</label><input
+                                    type="text" class="input" id="tfField" placeholder="Calculated field name"></div>
+                            <button class="btn btn-primary" onclick="runTransform()">Run Transform</button>
+                        </div>
+                    </div>
+                    <div class="card" id="tfResultCard" style="display:none">
+                        <div class="card-header">
+                            <div class="card-title">Transform Results</div>
+                        </div>
+                        <div class="card-body" id="tfResults"></div>
+                    </div>
+                    <div class="card card-body" style="border-color:var(--accent-soft);margin-top:14px">
+                        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent-h)">📐 Formula
+                            Syntax</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12.5px">
+                            <div><code
+                                    style="background:var(--surface-3);padding:3px 8px;border-radius:4px;display:block;margin-bottom:4px">full_name = first_name + " " + last_name</code>
+                                <div style="color:var(--text-3)">Concatenate fields</div>
+                            </div>
+                            <div><code
+                                    style="background:var(--surface-3);padding:3px 8px;border-radius:4px;display:block;margin-bottom:4px">total_score = score * 10</code>
+                                <div style="color:var(--text-3)">Math operations</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- NEW RULE MODAL -->
+    <div class="modal-backdrop" id="ruleModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="ruleModalTitle">New Automation Rule</div><button
+                    class="btn btn-ghost btn-icon btn-sm"
+                    onclick="document.getElementById('ruleModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="field"><label class="label">Rule Name</label><input type="text" class="input" id="rName"
+                        placeholder="e.g. Alert on low rating"></div>
+                <div class="field"><label class="label">Form</label><select class="input" id="rForm"></select></div>
+                <div class="field"><label class="label">Condition <span
+                            style="font-size:11px;color:var(--text-4);margin-left:4px">e.g. "rating &lt; 3" or "feedback
+                            contains bad"</span></label><input type="text" class="input" id="rCond"
+                        placeholder='field operator value — e.g. "Overall Rating &lt; 3"'></div>
+                <div class="field"><label class="label">Action</label>
+                    <div class="action-options" id="actionOptions">
+                        <div class="action-option selected" onclick="selectAction('log',this)">
+                            <div class="action-icon">📋</div>
+                            <div>Log</div>
+                            <div style="font-size:10.5px;color:var(--text-3);margin-top:2px">Record trigger in logs
+                            </div>
+                        </div>
+                        <div class="action-option" onclick="selectAction('webhook',this)">
+                            <div class="action-icon">📡</div>
+                            <div>Webhook</div>
+                            <div style="font-size:10.5px;color:var(--text-3);margin-top:2px">Call a URL endpoint</div>
+                        </div>
+                        <div class="action-option" onclick="selectAction('send_email',this)">
+                            <div class="action-icon">📧</div>
+                            <div>Email</div>
+                            <div style="font-size:10.5px;color:var(--text-3);margin-top:2px">Send notification</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="webhookUrlField" style="display:none" class="field"><label class="label">Webhook
+                        URL</label><input type="url" class="input" id="rWebhook"
+                        placeholder="https://hooks.example.com/..."></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary"
+                    onclick="document.getElementById('ruleModal').classList.remove('open')">Cancel</button><button
+                    class="btn btn-primary" onclick="saveRule()">Save Rule</button></div>
+        </div>
+    </div>
+
+    <!-- WEBHOOK MODAL -->
+    <div class="modal-backdrop" id="whModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Add Webhook</div><button class="btn btn-ghost btn-icon btn-sm"
+                    onclick="document.getElementById('whModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="field"><label class="label">Webhook Name</label><input type="text" class="input" id="whName"
+                        placeholder="My Slack Notification"></div>
+                <div class="field"><label class="label">Form</label><select class="input" id="whForm"></select></div>
+                <div class="field"><label class="label">Endpoint URL</label><input type="url" class="input" id="whUrl"
+                        placeholder="https://hooks.slack.com/..."></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary"
+                    onclick="document.getElementById('whModal').classList.remove('open')">Cancel</button><button
+                    class="btn btn-primary" onclick="saveWebhook()">Add Webhook</button></div>
+        </div>
+    </div>
+
+    <script>
+        let forms = [], automations = [], webhooks = [], selAction = 'log';
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!DocmoAPI.requireAuth()) return;
+            const u = await DocmoAPI.getMe();
+            if (u) { document.getElementById('uAvatar').textContent = u.avatar || '?'; document.getElementById('uName').textContent = u.name || 'User'; }
+            forms = await DocmoAPI.getForms().catch(() => []);
+            const opts = forms.map(f => `<option value="${f.id}">${DocmoAPI.escH(f.title)}</option>`).join('');
+            document.getElementById('rForm').innerHTML = opts;
+            document.getElementById('whForm').innerHTML = opts;
+            document.getElementById('tfFormSel').innerHTML = opts;
+            await loadAll();
+        });
+
+        async function loadAll() {
+            [automations, webhooks] = await Promise.all([
+                DocmoAPI.automation.list().catch(() => []),
+                DocmoAPI.webhooks.list().catch(() => [])
+            ]);
+            renderRules(); renderWebhooks();
+        }
+
+        function renderRules() {
+            document.getElementById('rulesCnt').textContent = automations.length;
+            const t = document.getElementById('rulesTable');
+            if (!automations.length) { t.innerHTML = '<div class="empty-state" style="padding:40px"><div class="empty-desc">No automation rules yet. Create one to trigger actions on form submissions.</div></div>'; return; }
+            t.innerHTML = automations.map(a => {
+                const form = forms.find(f => f.id === a.formId);
+                return `<div class="auto-row"><div style="font-weight:600">${DocmoAPI.escH(a.name)}</div><div><div class="condition-preview">${DocmoAPI.escH(a.condition)}</div><div style="margin-top:5px;display:flex;align-items:center;gap:6px"><span style="color:var(--text-4)">→</span><span class="action-badge">${DocmoAPI.escH(a.action)}</span></div></div><div style="font-size:12px;color:var(--text-3)">${DocmoAPI.escH(form?.title || 'Deleted')}</div><div>${a.active !== false ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Paused</span>'}</div><div class="flex gap-6"><button class="btn btn-secondary btn-sm" onclick="toggleRule('${a.id}',${a.active === false})">${a.active !== false ? 'Pause' : 'Resume'}</button><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="delRule('${a.id}')">✕</button></div></div>`;
+            }).join('');
+        }
+
+        function renderWebhooks() {
+            const t = document.getElementById('whTable');
+            if (!webhooks.length) { t.innerHTML = '<div class="empty-state" style="padding:40px"><div class="empty-desc">No webhooks configured. Add one to receive real-time notifications.</div></div>'; return; }
+            t.innerHTML = webhooks.map(w => {
+                const form = forms.find(f => f.id === w.formId);
+                return `<div class="wh-row"><div><div style="font-weight:600;margin-bottom:2px">${DocmoAPI.escH(w.name)}</div><div style="font-size:11.5px;color:var(--text-3);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${DocmoAPI.escH(w.url)}</div></div><div style="font-size:12.5px">${DocmoAPI.escH(form?.title || 'Deleted')}</div><div>${(w.events || []).map(e => `<span class="badge badge-gray" style="margin:1px">${e}</span>`).join('')}</div><div><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="delWebhook('${w.id}')">✕</button></div></div>`;
+            }).join('');
+        }
+
+        function switchTab(id, el) { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none'); el.classList.add('active'); document.getElementById('tab-' + id).style.display = 'block'; }
+        function selectAction(val, el) { selAction = val; document.querySelectorAll('.action-option').forEach(x => x.classList.remove('selected')); el.classList.add('selected'); document.getElementById('webhookUrlField').style.display = val === 'webhook' ? 'block' : 'none'; }
+
+        function openNewModal() { document.getElementById('rName').value = ''; document.getElementById('rCond').value = ''; document.getElementById('rWebhook').value = ''; document.getElementById('ruleModal').classList.add('open'); }
+        function openWebhookModal() { document.getElementById('whName').value = ''; document.getElementById('whUrl').value = ''; document.getElementById('whModal').classList.add('open'); }
+
+        async function saveRule() {
+            const name = document.getElementById('rName').value.trim(), cond = document.getElementById('rCond').value.trim(), formId = document.getElementById('rForm').value;
+            if (!name || !cond || !formId) return toast('Fill in Name, Form, and Condition', 'warning');
+            const payload = { name, formId, condition: cond, action: selAction, active: true };
+            if (selAction === 'webhook') { const u = document.getElementById('rWebhook').value.trim(); if (!u) return toast('Webhook URL required', 'warning'); payload.webhookUrl = u; }
+            try { await DocmoAPI.automation.create(payload); document.getElementById('ruleModal').classList.remove('open'); await loadAll(); toast('Automation rule created', 'success'); }
+            catch (e) { toast(e.message, 'error'); }
+        }
+
+        async function toggleRule(id, newActive) { try { await DocmoAPI.automation.update(id, { active: newActive }); await loadAll(); toast(newActive ? 'Rule resumed' : 'Rule paused', 'success'); } catch (e) { toast(e.message, 'error'); } }
+        async function delRule(id) { if (!confirm('Delete this automation rule?')) return; try { await DocmoAPI.automation.delete(id); await loadAll(); toast('Rule deleted', 'success'); } catch (e) { toast(e.message, 'error'); } }
+
+        async function saveWebhook() {
+            const name = document.getElementById('whName').value.trim(), url = document.getElementById('whUrl').value.trim(), formId = document.getElementById('whForm').value;
+            if (!url || !formId) return toast('URL and Form are required', 'warning');
+            try { await DocmoAPI.webhooks.create({ name: name || 'Webhook', formId, url, events: ['response_submitted'] }); document.getElementById('whModal').classList.remove('open'); await loadAll(); toast('Webhook added', 'success'); }
+            catch (e) { toast(e.message, 'error'); }
+        }
+        async function delWebhook(id) { if (!confirm('Delete this webhook?')) return; try { await DocmoAPI.webhooks.delete(id); await loadAll(); toast('Webhook deleted', 'success'); } catch (e) { toast(e.message, 'error'); } }
+
+        async function runTransform() {
+            const formId = document.getElementById('tfFormSel').value, formula = document.getElementById('tfFormula').value.trim(), fieldName = document.getElementById('tfField').value.trim();
+            if (!formId || !formula) return toast('Select a form and enter a formula', 'warning');
+            try { const r = await DocmoAPI.transformData(formId, formula, fieldName || undefined); document.getElementById('tfResultCard').style.display = 'block'; document.getElementById('tfResults').innerHTML = `<div class="flex items-center gap-12 mb-16"><div class="badge badge-green">✓ ${r.processed} records processed</div><div class="badge badge-gray">${r.results.length} computed</div>${r.errors?.length ? `<div class="badge badge-red">${r.errors.length} errors</div>` : ''}</div><div style="max-height:300px;overflow-y:auto">${r.results.slice(0, 20).map((x, i) => `<div style="padding:7px 0;border-bottom:1px solid var(--border);display:flex;gap:12px;font-size:12.5px"><div style="color:var(--text-4);width:30px">#${i + 1}</div><div style="flex:1;color:var(--text-3);font-family:monospace;font-size:11.5px">resp_${x.responseId?.slice(-6)}</div><div style="font-weight:600">${DocmoAPI.escH(String(x.value || ''))}</div></div>`).join('')}</div>`; toast('Transform completed', 'success'); }
+            catch (e) { toast(e.message, 'error'); }
+        }
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open')); });
+    </script>
+</body>
+
+</html>
