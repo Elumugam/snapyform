@@ -24,9 +24,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Data Layer ───────────────────────────────────────────────────────────────
-const DATA = path.join(__dirname, 'data');
+const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+const DATA = isVercel ? '/tmp/data' : path.join(__dirname, 'data');
 if (!fs.existsSync(DATA)) fs.mkdirSync(DATA, { recursive: true });
-fs.mkdirSync(path.join(__dirname, 'public', 'uploads'), { recursive: true });
+const UPLOADS = isVercel ? '/tmp/uploads' : path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(UPLOADS)) fs.mkdirSync(UPLOADS, { recursive: true });
 
 function readDB(col) {
     const file = path.join(DATA, col + '.json');
@@ -889,8 +891,11 @@ app.get('/form/:id', (req, res) => res.sendFile(path.join(__dirname, 'public', '
 app.use('/api/', (req, res) => res.status(404).json({ error: 'Not found' }));
 app.use((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-app.listen(PORT, () => {
-    console.log(`
+module.exports = app;
+
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`
 ╔═══════════════════════════════════════╗
 ║   SnapyForm – running on port ${PORT}    ║
 ║   → http://localhost:${PORT}              ║
@@ -901,4 +906,5 @@ app.listen(PORT, () => {
 ║   Demo:   demo@snapyform.com          ║
 ║   Pass:   demo1234                    ║
 ╚═══════════════════════════════════════╝`);
-});
+    });
+}
