@@ -116,18 +116,21 @@
             <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px">
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">Plan Distribution</div>
+                        <div class="card-title">Growth Trends (30 Days)</div>
                     </div>
                     <div class="card-body">
-                        <div class="chart-wrap-200"><canvas id="planChart"></canvas></div>
+                        <div class="chart-wrap-300"><canvas id="trendChart"></canvas></div>
                     </div>
                 </div>
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">Quick Stats</div>
+                        <div class="card-title">Plan Distribution</div>
                     </div>
-                    <div class="card-body" id="quickStats">
-                        <div style="color:var(--text-4);font-size:13px">Loading...</div>
+                    <div class="card-body">
+                        <div class="chart-wrap-200"><canvas id="planChart"></canvas></div>
+                        <div class="mt-16" id="quickStats">
+                            <div style="color:var(--text-4);font-size:13px">Loading...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -270,10 +273,85 @@
         }
 
         function renderOverview() {
-            const s = adminData.stats; if (!s) return; document.getElementById('stUsers').textContent = s.totalUsers; document.getElementById('stForms').textContent = s.totalForms; document.getElementById('stResp').textContent = s.totalResponses; document.getElementById('stBlocked').textContent = s.blockedUsers; document.getElementById('stFormsCh').textContent = '+' + s.formsToday + ' today'; document.getElementById('stFormsCh').className = 'stat-change' + (s.formsToday > 0 ? ' up' : ''); document.getElementById('stRespCh').textContent = '+' + s.responsesToday + ' today'; document.getElementById('stRespCh').className = 'stat-change' + (s.responsesToday > 0 ? ' up' : '');
-            const qs = `<div style="display:flex;flex-direction:column;gap:8px"><div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Active Users</span><span style="font-weight:600">${s.activeUsers}</span></div><div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Activity Today</span><span style="font-weight:600">${s.activityToday}</span></div><div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Free Users</span><span style="font-weight:600">${s.planBreakdown?.free || 0}</span></div><div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Pro Users</span><span style="font-weight:600">${s.planBreakdown?.pro || 0}</span></div><div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Enterprise</span><span style="font-weight:600">${s.planBreakdown?.enterprise || 0}</span></div></div>`;
+            const s = adminData.stats;
+            if (!s) return;
+            document.getElementById('stUsers').textContent = s.totalUsers;
+            document.getElementById('stForms').textContent = s.totalForms;
+            document.getElementById('stResp').textContent = s.totalResponses;
+            document.getElementById('stBlocked').textContent = s.blockedUsers;
+            document.getElementById('stFormsCh').textContent = '+' + s.formsToday + ' today';
+            document.getElementById('stFormsCh').className = 'stat-change' + (s.formsToday > 0 ? ' up' : '');
+            document.getElementById('stRespCh').textContent = '+' + s.responsesToday + ' today';
+            document.getElementById('stRespCh').className = 'stat-change' + (s.responsesToday > 0 ? ' up' : '');
+
+            const qs = `<div style="display:flex;flex-direction:column;gap:8px">
+                <div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Active Users</span><span style="font-weight:600">${s.activeUsers}</span></div>
+                <div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Activity Today</span><span style="font-weight:600">${s.activityToday}</span></div>
+                <div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Free Users</span><span style="font-weight:600">${s.planBreakdown?.free || 0}</span></div>
+                <div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Pro Users</span><span style="font-weight:600">${s.planBreakdown?.pro || 0}</span></div>
+                <div class="flex items-center gap-8"><span style="font-size:13px;color:var(--text-2);flex:1">Enterprise</span><span style="font-weight:600">${s.planBreakdown?.enterprise || 0}</span></div>
+            </div>`;
             document.getElementById('quickStats').innerHTML = qs;
-            new Chart(document.getElementById('planChart'), { type: 'doughnut', data: { labels: ['Free', 'Pro', 'Enterprise'], datasets: [{ data: [s.planBreakdown?.free || 0, s.planBreakdown?.pro || 0, s.planBreakdown?.enterprise || 0], backgroundColor: ['#3f3f46', '#6366f1', '#22c55e'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#a1a1aa', font: { size: 11 } } } } } });
+
+            // Plan Chart
+            new Chart(document.getElementById('planChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Free', 'Pro', 'Enterprise'],
+                    datasets: [{
+                        data: [s.planBreakdown?.free || 0, s.planBreakdown?.pro || 0, s.planBreakdown?.enterprise || 0],
+                        backgroundColor: ['#3f3f46', '#6366f1', '#22c55e'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#a1a1aa', font: { size: 11 } } }
+                    }
+                }
+            });
+
+            // Growth Trend Chart
+            if (s.trends) {
+                const ctx = document.getElementById('trendChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: s.trends.responses.map(t => t.date.split('-').slice(1).join('/')),
+                        datasets: [
+                            {
+                                label: 'Responses',
+                                data: s.trends.responses.map(t => t.count),
+                                borderColor: '#6366f1',
+                                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'User Signups',
+                                data: s.trends.users.map(t => t.count),
+                                borderColor: '#22c55e',
+                                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a' } },
+                            x: { grid: { display: false }, ticks: { color: '#71717a', font: { size: 10 } } }
+                        },
+                        plugins: {
+                            legend: { position: 'top', align: 'end', labels: { boxWidth: 10, color: '#a1a1aa' } }
+                        }
+                    }
+                });
+            }
             document.getElementById('recentActivity').innerHTML = renderActivityItems(adminData.activity.slice(0, 8));
         }
 

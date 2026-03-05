@@ -94,14 +94,20 @@
                 <div class="nav-item active" onclick="window.location='/dashboard'">
                     <div class="nav-icon-wrap">⊞</div><span class="nav-label">Dashboard</span>
                 </div>
+                <div class="nav-item" onclick="window.location='/dashboard#forms'">
+                    <div class="nav-icon-wrap">📋</div><span class="nav-label">My Forms</span>
+                </div>
                 <div class="nav-item" onclick="window.location='/templates'">
                     <div class="nav-icon-wrap">◧</div><span class="nav-label">Templates</span>
                 </div>
             </div>
             <div class="sidebar-section">
-                <div class="sidebar-section-label">Data</div>
+                <div class="sidebar-section-label">Data & Performance</div>
                 <div class="nav-item" onclick="window.location='/responses'">
                     <div class="nav-icon-wrap">≡</div><span class="nav-label">Responses</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/analytics'">
+                    <div class="nav-icon-wrap">📈</div><span class="nav-label">Analytics</span>
                 </div>
                 <div class="nav-item" onclick="window.location='/export'">
                     <div class="nav-icon-wrap">↓</div><span class="nav-label">Export</span>
@@ -295,6 +301,49 @@
         </div>
     </div>
 
+    <!-- SHARE MODAL -->
+    <div class="modal-backdrop" id="shareModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal modal-md" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Share Form</div><button class="btn btn-ghost btn-icon btn-sm"
+                    onclick="document.getElementById('shareModal').classList.remove('open')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="field">
+                    <label class="label">Public Link</label>
+                    <div class="flex gap-8">
+                        <input type="text" class="input" id="shareLinkInput" readonly
+                            style="background:var(--surface-2)">
+                        <button class="btn btn-secondary" onclick="copyShareLink()">⎘ Copy</button>
+                    </div>
+                </div>
+
+                <div style="margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+                    <button class="btn btn-secondary btn-sm" onclick="shareWhatsApp()">WhatsApp</button>
+                    <button class="btn btn-secondary btn-sm" onclick="shareEmail()">Email</button>
+                    <button class="btn btn-secondary btn-sm" onclick="showQR()">QR Code</button>
+                </div>
+
+                <div style="margin-top:20px" id="qrContainer">
+                    <div class="label">QR Code</div>
+                    <div style="background:#fff;padding:12px;border-radius:8px;display:inline-block;margin-top:4px">
+                        <img id="qrImg" style="width:160px;height:160px;display:block">
+                    </div>
+                </div>
+
+                <div class="field" style="margin-top:20px">
+                    <label class="label">Embed in Website (HTML)</label>
+                    <textarea class="input" id="embedCode" readonly rows="3"
+                        style="font-family:monospace;font-size:11px;background:var(--surface-2)"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary"
+                    onclick="document.getElementById('shareModal').classList.remove('open')">Done</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let allForms = [], currentFilter = 'all', currentUser = null;
 
@@ -312,13 +361,19 @@
                 document.getElementById('uAvatar').textContent = u.avatar || '?';
                 document.getElementById('uName').textContent = u.name || 'User';
                 document.getElementById('uPlan').textContent = (u.plan || 'Free') + ' Plan';
-                if (u.isAdmin) document.getElementById('adminNavItem').style.display = 'flex';
+                if (u.isAdmin) document.getElementById('adminNavItem').style.display = '';
                 const h = new Date().getHours();
                 document.getElementById('greeting').textContent = (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + ', ' + (u.firstName || u.name || 'there');
                 document.getElementById('dateStr').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 if (u.theme) document.documentElement.setAttribute('data-theme', u.theme);
             }
-            await Promise.all([loadForms(), loadStats()]);
+            await Promise.all([loadStats(), loadForms()]);
+
+            // Handle Hash Navigation
+            if (window.location.hash === '#forms') {
+                const el = document.getElementById('formsGrid');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }
         });
 
         async function loadForms() {
@@ -364,10 +419,12 @@
         <div style="font-size:13px;font-weight:600">${f.responseCount || 0}</div>
         <div style="font-size:12px;color:var(--text-3)">${DocmoAPI.relTime(f.updatedAt || f.createdAt)}</div>
         <div class="flex gap-4">
+          <button class="btn btn-secondary btn-sm" onclick="openShare('${f.id}')">Share</button>
           <button class="btn btn-secondary btn-sm" onclick="window.location='/builder?id=${f.id}'">Edit</button>
           <div class="dropdown-wrap">
             <button class="btn btn-ghost btn-sm" onclick="toggleDd('dd_${f.id}')">···</button>
             <div class="dropdown-menu" id="dd_${f.id}">
+              <div class="dropdown-item" onclick="openShare('${f.id}')">⤴ Share Form</div>
               <div class="dropdown-item" onclick="window.location='/responses?id=${f.id}'">↗ View Responses</div>
               <div class="dropdown-item" onclick="window.location='/export?id=${f.id}'">↓ Export Data</div>
               <div class="dropdown-item" onclick="copyLink('${f.id}')">⎘ Copy Link</div>
@@ -412,6 +469,35 @@
             try { const r = await DocmoAI.generateForm(p); const f = await DocmoAPI.createForm({ title: r.title || 'AI Generated Form', description: r.description || '', fields: r.fields || [], status: 'draft', icon: '◈' }); toast('Form generated successfully!', 'success'); setTimeout(() => window.location = '/builder?id=' + f.id, 600); }
             catch (e) { toast('AI Error: ' + e.message, 'error'); }
             finally { btn.textContent = 'Generate Form'; btn.disabled = false; }
+        }
+
+        function openShare(id) {
+            const f = allForms.find(f => f.id === id);
+            if (!f) return;
+            const url = window.location.origin + '/form/' + id;
+            document.getElementById('shareLinkInput').value = url;
+            document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=300x300`;
+            document.getElementById('embedCode').value = `<iframe src="${url}" width="100%" height="600" frameborder="0"></iframe>`;
+            document.getElementById('shareModal').classList.add('open');
+            window.currentShareId = id;
+            window.currentShareUrl = url;
+            window.currentShareTitle = f.title;
+        }
+
+        function copyShareLink() {
+            navigator.clipboard.writeText(document.getElementById('shareLinkInput').value).then(() => toast('Link copied!', 'success'));
+        }
+
+        function shareWhatsApp() {
+            window.open(`https://wa.me/?text=${encodeURIComponent('Please fill out this form: ' + window.currentShareTitle + ' ' + window.currentShareUrl)}`, '_blank');
+        }
+
+        function shareEmail() {
+            window.open(`mailto:?subject=${encodeURIComponent(window.currentShareTitle)}&body=${encodeURIComponent('Please fill out this form: ' + window.currentShareUrl)}`, '_self');
+        }
+
+        function showQR() {
+            toast('QR Code updated for this form', 'info');
         }
 
         function toggleTheme() { const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', t); DocmoAPI.updateMe({ theme: t }).catch(() => { }); }

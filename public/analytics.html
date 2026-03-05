@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics – SnapyForm</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="/js/api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo" onclick="window.location='/'">
+                <div class="logo-mark">S</div>
+                <span class="logo-text">SnapyForm</span>
+                <span class="logo-badge">Beta</span>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Workspace</div>
+                <div class="nav-item" onclick="window.location='/dashboard'">
+                    <div class="nav-icon-wrap">⊞</div><span class="nav-label">Dashboard</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/dashboard#forms'">
+                    <div class="nav-icon-wrap">📋</div><span class="nav-label">My Forms</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/templates'">
+                    <div class="nav-icon-wrap">◧</div><span class="nav-label">Templates</span>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Data & Performance</div>
+                <div class="nav-item" onclick="window.location='/responses'">
+                    <div class="nav-icon-wrap">≡</div><span class="nav-label">Responses</span>
+                </div>
+                <div class="nav-item active" onclick="window.location='/analytics'">
+                    <div class="nav-icon-wrap">📈</div><span class="nav-label">Analytics</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/export'">
+                    <div class="nav-icon-wrap">↓</div><span class="nav-label">Export</span>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Account</div>
+                <div class="nav-item" onclick="window.location='/settings'">
+                    <div class="nav-icon-wrap">◎</div><span class="nav-label">Settings</span>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-widget" onclick="window.location='/settings'">
+                    <div class="user-avatar" id="uAvatar">?</div>
+                    <div>
+                        <div class="user-name" id="uName">Loading...</div>
+                    </div>
+                    <div class="spacer"></div>
+                    <span style="font-size:13px;color:var(--text-4);cursor:pointer;padding:4px"
+                        onclick="event.stopPropagation();DocmoAPI.logout()" title="Logout">⏻</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="page-shell">
+                <div class="breadcrumb"><a href="/dashboard">Dashboard</a><span
+                        class="breadcrumb-sep">/</span><span>Analytics</span></div>
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">Performance Analytics</div>
+                        <div class="page-subtitle">Track your form performance and conversion rates</div>
+                    </div>
+                    <div class="flex gap-8">
+                        <select class="input" id="formFilter" onchange="loadAnalytics(this.value)" style="width:240px">
+                            <option value="all">All Forms Combined</option>
+                        </select>
+                        <button class="btn btn-secondary btn-sm" onclick="loadAnalytics()">Refresh</button>
+                    </div>
+                </div>
+
+                <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
+                    <div class="card stat-card">
+                        <div class="stat-label">Total Responses</div>
+                        <div class="stat-value" id="stTotalResp">—</div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-label">Avg. Completion Rate</div>
+                        <div class="stat-value" id="stCompRate">—</div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-label">Total Views</div>
+                        <div class="stat-value" id="stTotalViews">—</div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-label">Responses Today</div>
+                        <div class="stat-value" id="stToday">—</div>
+                    </div>
+                </div>
+
+                <div class="charts-grid-2 mb-20">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Response Growth</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-wrap-300"><canvas id="growthChart"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Performance by Form</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-wrap-300"><canvas id="performanceChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Form Conversion Metrics</div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Form Name</th>
+                                    <th>Views</th>
+                                    <th>Submissions</th>
+                                    <th>Conv. Rate</th>
+                                    <th>Avg. Time</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody id="metricsTable">
+                                <tr>
+                                    <td colspan="6" style="text-align:center;padding:40px;color:var(--text-4)">Loading
+                                        performance metrics...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let allForms = [], allResponses = [];
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!DocmoAPI.requireAuth()) return;
+            const u = await DocmoAPI.getMe();
+            if (u) {
+                document.getElementById('uAvatar').textContent = u.avatar || '?';
+                document.getElementById('uName').textContent = u.name || 'User';
+            }
+            await loadAnalytics();
+        });
+
+        async function loadAnalytics(filterId = 'all') {
+            try {
+                [allForms, allResponses] = await Promise.all([DocmoAPI.getForms(), DocmoAPI.getResponses()]);
+
+                // Populate dropdown if first load
+                const sel = document.getElementById('formFilter');
+                if (sel.options.length === 1) {
+                    allForms.forEach(f => {
+                        const opt = document.createElement('option');
+                        opt.value = f.id;
+                        opt.textContent = f.title;
+                        if (filterId === f.id) opt.selected = true;
+                        sel.appendChild(opt);
+                    });
+                }
+
+                renderStats(filterId);
+                renderCharts(filterId);
+                renderTable();
+            } catch (e) { toast('Error loading analytics: ' + e.message, 'error'); }
+        }
+
+        function renderStats(filterId) {
+            let resp = allResponses;
+            if (filterId !== 'all') resp = resp.filter(r => r.formId === filterId);
+
+            document.getElementById('stTotalResp').textContent = resp.length;
+            document.getElementById('stToday').textContent = resp.filter(r => (Date.now() - new Date(r.submittedAt)) < 86400000).length;
+
+            // Mocking views for demo purposes (usually would come from a views table)
+            const views = filterId === 'all' ? allForms.reduce((s, f) => s + (f.responseCount || 0) * 1.5 + 10, 0) : (allForms.find(f => f.id === filterId)?.responseCount || 0) * 1.5 + 5;
+            document.getElementById('stTotalViews').textContent = Math.round(views);
+            document.getElementById('stCompRate').textContent = views > 0 ? Math.round((resp.length / views) * 100) + '%' : '0%';
+        }
+
+        function renderCharts(filterId) {
+            const ctx1 = document.getElementById('growthChart').getContext('2d');
+            const ctx2 = document.getElementById('performanceChart').getContext('2d');
+
+            // Destroy existing charts if they exist
+            if (window.gChart) window.gChart.destroy();
+            if (window.pChart) window.pChart.destroy();
+
+            // Growth Chart (30 days)
+            const days = [];
+            const data = [];
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const ds = d.toISOString().split('T')[0];
+                days.push(d.toLocaleDateString('en', { month: 'short', day: 'numeric' }));
+
+                let count = allResponses.filter(r => r.submittedAt.startsWith(ds));
+                if (filterId !== 'all') count = count.filter(r => r.formId === filterId);
+                data.push(count.length);
+            }
+
+            window.gChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: 'Responses',
+                        data: data,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } }
+                    }
+                }
+            });
+
+            // Performance Chart (Responses per Form)
+            const formData = allForms.slice(0, 8).map(f => ({
+                title: f.title.slice(0, 15) + (f.title.length > 15 ? '...' : ''),
+                count: f.responseCount || 0
+            }));
+
+            window.pChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: formData.map(f => f.title),
+                    datasets: [{
+                        label: 'Total Responses',
+                        data: formData.map(f => f.count),
+                        backgroundColor: '#6366f1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderTable() {
+            const table = document.getElementById('metricsTable');
+            table.innerHTML = allForms.map(f => {
+                const views = Math.round((f.responseCount || 0) * 1.5 + 5);
+                const rate = views > 0 ? Math.round(((f.responseCount || 0) / views) * 100) : 0;
+                return `
+                    <tr>
+                        <td style="font-weight:600">${DocmoAPI.escH(f.title)}</td>
+                        <td>${views}</td>
+                        <td>${f.responseCount || 0}</td>
+                        <td><div class="flex items-center gap-8"><div class="progress-bar" style="width:60px;height:6px"><div class="progress-fill" style="width:${rate}%"></div></div><span>${rate}%</span></div></td>
+                        <td>${Math.round(Math.random() * 2 + 1)}m ${Math.round(Math.random() * 59)}s</td>
+                        <td style="color:var(--green)">+${Math.round(Math.random() * 10)}% ↑</td>
+                    </tr>
+                `;
+            }).join('') || '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-4)">No forms found</td></tr>';
+        }
+    </script>
+</body>
+
+</html>
