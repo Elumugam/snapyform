@@ -4,6 +4,7 @@
  * Run: node server.js  →  http://localhost:3000
  */
 
+require('dotenv').config();
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
