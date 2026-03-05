@@ -13,6 +13,14 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
+// Global Error Handlers for Vercel Debugging
+process.on('uncaughtException', (err) => {
+    console.error('[Vercel Error] Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[Vercel Error] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'snapyform_secret_2026';
@@ -124,36 +132,46 @@ function safeUser(u) { const { password: _, ...safe } = u; return safe; }
 // ║  AUTH ROUTES                                                          ║
 // ╚═══════════════════════════════════════════════════════════════════════╝
 app.post('/api/auth/register', async (req, res) => {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) return res.status(400).json({ error: 'All fields required' });
-    if (password.length < 6) return res.status(400).json({ error: 'Password min 6 chars' });
-    const users = readDB('users');
-    if (users.find(u => u.email === email)) return res.status(409).json({ error: 'Email already registered' });
-    const p = name.split(' ');
-    const user = {
-        id: 'user_' + uuidv4().replace(/-/g, '').slice(0, 10),
-        name, firstName: p[0], lastName: p.slice(1).join(' '),
-        email, password: await bcrypt.hash(password, 10),
-        plan: 'Free', avatar: (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase(),
-        theme: 'dark', isAdmin: false, isBlocked: false,
-        createdAt: new Date().toISOString()
-    };
-    users.push(user);
-    writeDB('users', users);
-    logActivity('user_register', user.id, { email });
-    const token = jwt.sign({ id: user.id, email }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, user: safeUser(user) });
+    try {
+        const { name, email, password } = req.body;
+        if (!name || !email || !password) return res.status(400).json({ error: 'All fields required' });
+        if (password.length < 6) return res.status(400).json({ error: 'Password min 6 chars' });
+        const users = readDB('users');
+        if (users.find(u => u.email === email)) return res.status(409).json({ error: 'Email already registered' });
+        const p = name.split(' ');
+        const user = {
+            id: 'user_' + uuidv4().replace(/-/g, '').slice(0, 10),
+            name, firstName: p[0], lastName: p.slice(1).join(' '),
+            email, password: await bcrypt.hash(password, 10),
+            plan: 'Free', avatar: (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase(),
+            theme: 'dark', isAdmin: false, isBlocked: false,
+            createdAt: new Date().toISOString()
+        };
+        users.push(user);
+        writeDB('users', users);
+        logActivity('user_register', user.id, { email });
+        const token = jwt.sign({ id: user.id, email }, JWT_SECRET, { expiresIn: '30d' });
+        res.json({ token, user: safeUser(user) });
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ error: 'Internal server error during registration' });
+    }
 });
 
 app.post('/api/auth/login', async (req, res) => {
-    const { email, password } = req.body;
-    const users = readDB('users');
-    const user = users.find(u => u.email === email);
-    if (!user || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ error: 'Invalid credentials' });
-    if (user.isBlocked) return res.status(403).json({ error: 'Account suspended. Contact support.' });
-    logActivity('user_login', user.id, { email });
-    const token = jwt.sign({ id: user.id, email }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, user: safeUser(user) });
+    try {
+        const { email, password } = req.body;
+        const users = readDB('users');
+        const user = users.find(u => u.email === email);
+        if (!user || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ error: 'Invalid credentials' });
+        if (user.isBlocked) return res.status(403).json({ error: 'Account suspended. Contact support.' });
+        logActivity('user_login', user.id, { email });
+        const token = jwt.sign({ id: user.id, email }, JWT_SECRET, { expiresIn: '30d' });
+        res.json({ token, user: safeUser(user) });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ error: 'Internal server error during login' });
+    }
 });
 
 app.get('/api/auth/me', auth, (req, res) => {
@@ -163,18 +181,23 @@ app.get('/api/auth/me', auth, (req, res) => {
 });
 
 app.patch('/api/auth/me', auth, async (req, res) => {
-    const users = readDB('users');
-    const idx = users.findIndex(u => u.id === req.user.id);
-    if (idx === -1) return res.status(404).json({ error: 'Not found' });
-    const { password, newPassword, ...rest } = req.body;
-    if (newPassword) {
-        if (!password || !(await bcrypt.compare(password, users[idx].password)))
-            return res.status(401).json({ error: 'Current password incorrect' });
-        users[idx].password = await bcrypt.hash(newPassword, 10);
+    try {
+        const users = readDB('users');
+        const idx = users.findIndex(u => u.id === req.user.id);
+        if (idx === -1) return res.status(404).json({ error: 'Not found' });
+        const { password, newPassword, ...rest } = req.body;
+        if (newPassword) {
+            if (!password || !(await bcrypt.compare(password, users[idx].password)))
+                return res.status(401).json({ error: 'Current password incorrect' });
+            users[idx].password = await bcrypt.hash(newPassword, 10);
+        }
+        users[idx] = { ...users[idx], ...rest, id: users[idx].id, isAdmin: users[idx].isAdmin, updatedAt: new Date().toISOString() };
+        writeDB('users', users);
+        res.json(safeUser(users[idx]));
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(500).json({ error: 'Internal server error during profile update' });
     }
-    users[idx] = { ...users[idx], ...rest, id: users[idx].id, isAdmin: users[idx].isAdmin, updatedAt: new Date().toISOString() };
-    writeDB('users', users);
-    res.json(safeUser(users[idx]));
 });
 
 // ╔═══════════════════════════════════════════════════════════════════════╗
@@ -805,18 +828,23 @@ app.get('/api/forms/:id/export/:format', auth, (req, res) => {
 // ║  QR CODE ENDPOINT  GET /api/forms/:id/qrcode                        ║
 // ╚═══════════════════════════════════════════════════════════════════════╝
 app.get('/api/forms/:id/qrcode', auth, async (req, res) => {
-    const form = readDB('forms').find(f => f.id === req.params.id && f.userId === req.user.id);
-    if (!form) return res.status(404).json({ error: 'Form not found' });
-    // Generate QR code as SVG (no npm package needed — pure JS QR matrix)
-    const url = (req.query.baseUrl || `http://localhost:${PORT}`) + '/form/' + req.params.id;
-    // Return metadata + URL (client renders the actual QR using its own library)
-    res.json({
-        formId: req.params.id,
-        title: form.title,
-        formUrl: url,
-        qrApiUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=300x300&format=png`,
-        svgUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=300x300&format=svg`
-    });
+    try {
+        const form = readDB('forms').find(f => f.id === req.params.id && f.userId === req.user.id);
+        if (!form) return res.status(404).json({ error: 'Form not found' });
+        // Generate QR code as SVG (no npm package needed — pure JS QR matrix)
+        const url = (req.query.baseUrl || `http://localhost:${PORT}`) + '/form/' + req.params.id;
+        // Return metadata + URL (client renders the actual QR using its own library)
+        res.json({
+            formId: req.params.id,
+            title: form.title,
+            formUrl: url,
+            qrApiUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=300x300&format=png`,
+            svgUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=300x300&format=svg`
+        });
+    } catch (error) {
+        console.error('QR Code error:', error);
+        res.status(500).json({ error: 'Internal server error generating QR code' });
+    }
 });
 
 // ╔═══════════════════════════════════════════════════════════════════════╗
