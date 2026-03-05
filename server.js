@@ -86,8 +86,8 @@ function seed(col) {
     if (col === 'users') {
         return [
             {
-                id: 'user_admin', name: 'Admin', email: 'admin@snapyform.com',
-                password: bcrypt.hashSync('admin123', 10),
+                id: 'user_admin', name: 'Admin', email: 'info.elumugam@gmail.com',
+                password: bcrypt.hashSync('ADMINELUMUGAM', 10),
                 plan: 'Enterprise', avatar: 'AD', theme: 'dark', isAdmin: true,
                 isBlocked: false, createdAt: new Date().toISOString()
             },
@@ -154,7 +154,7 @@ function auth(req, res, next) {
 function adminAuth(req, res, next) {
     auth(req, res, () => {
         const u = readDB('users').find(u => u.id === req.user.id);
-        if (!u?.isAdmin) return res.status(403).json({ success: false, error: 'Admin only access' });
+        if (!u?.isAdmin || u.email !== 'info.elumugam@gmail.com') return res.status(403).json({ success: false, error: 'Admin only access' });
         next();
     });
 }
