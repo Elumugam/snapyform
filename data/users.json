@@ -42,11 +42,11 @@
     "firstName": "elumugam",
     "lastName": "",
     "email": "info.elumugam@gmail.com",
-    "password": "$2a$10$JStL3j9B1HMJR5FQ47jfgelf9OGIVK9wH3cy9RpWzm2GOWyFGgdiW",
-    "plan": "Free",
+    "password": "$2a$10$UDQaJEEaY6YCkegsDPAwR.B8/w/zfr0RjiKgj2/V74yFCRg5k/JG6",
+    "plan": "Enterprise",
     "avatar": "E",
     "theme": "dark",
-    "isAdmin": false,
+    "isAdmin": true,
     "isBlocked": false,
     "createdAt": "2026-03-05T08:16:17.837Z"
   }
