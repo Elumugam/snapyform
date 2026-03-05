@@ -211,3 +211,19 @@ if ('serviceWorker' in navigator) {
     });
     window.addEventListener('offline', () => toast('You are offline. Responses will be queued.', 'warning'));
 }
+
+// ── UI Helpers ───────────────────────────────────────────────────────────
+window.toggleSidebar = function () {
+    const s = document.querySelector('.sidebar');
+    if (s) s.classList.toggle('open');
+};
+
+// Global click handler for mobile sidebar
+document.addEventListener('click', e => {
+    if (window.innerWidth > 768) return;
+    const s = document.querySelector('.sidebar');
+    const b = document.querySelector('.mobile-menu-btn');
+    if (s && s.classList.contains('open') && !s.contains(e.target) && !b?.contains(e.target)) {
+        s.classList.remove('open');
+    }
+});
