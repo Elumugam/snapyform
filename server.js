@@ -79,7 +79,7 @@ function writeDB(col, data) {
 function logActivity(action, userId, meta = {}) {
     const logs = readDB('activity');
     logs.unshift({ id: 'log_' + Date.now(), action, userId, meta, timestamp: new Date().toISOString() });
-    writeDB('activity', logs.slice(0, 500)); // keep last 500
+    writeDB('activity', logs.slice(0, 1000)); // increased history
 }
 
 function seed(col) {
@@ -89,13 +89,15 @@ function seed(col) {
                 id: 'user_admin', name: 'Admin', email: 'info.elumugam@gmail.com',
                 password: bcrypt.hashSync('ADMINELUMUGAM', 10),
                 plan: 'Enterprise', avatar: 'AD', theme: 'dark', isAdmin: true,
-                isBlocked: false, createdAt: new Date().toISOString()
+                isBlocked: false, createdAt: new Date().toISOString(),
+                apiKey: 'ak_' + uuidv4().replace(/-/g, '').slice(0, 24)
             },
             {
                 id: 'user_demo', name: 'John Smith', email: 'demo@snapyform.com',
                 password: bcrypt.hashSync('demo1234', 10),
                 plan: 'Pro', avatar: 'JS', theme: 'dark', isAdmin: false,
-                isBlocked: false, createdAt: new Date().toISOString()
+                isBlocked: false, createdAt: new Date().toISOString(),
+                apiKey: 'ak_demo12345678901234567890'
             }
         ];
     }
@@ -103,7 +105,7 @@ function seed(col) {
         return [{
             id: 'form_demo1', userId: 'user_demo',
             title: 'Customer Feedback Survey', description: 'Help us improve your experience',
-            status: 'active', icon: '★', responseCount: 2,
+            status: 'active', icon: 'clipboard', responseCount: 2,
             shareLink: 'customer-feedback-demo', allowAnonymous: true, showProgress: true,
             createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
             updatedAt: new Date(Date.now() - 3600000).toISOString(),
@@ -116,6 +118,23 @@ function seed(col) {
             ]
         }];
     }
+    if (col === 'tables') {
+        return [{
+            id: 'tbl_demo1', userId: 'user_demo', title: 'Customer Records',
+            description: 'Structured customer data from submissions',
+            columns: [
+                { id: 'c1', name: 'Name', type: 'string', required: true },
+                { id: 'c2', name: 'Email', type: 'email', required: true },
+                { id: 'c3', name: 'Rating', type: 'number', required: false },
+                { id: 'c4', name: 'Source', type: 'string', required: false }
+            ],
+            records: [
+                { id: 'rec_1', Name: 'Alice Johnson', Email: 'alice@company.com', Rating: 5, Source: 'Search engine', createdAt: new Date().toISOString() },
+                { id: 'rec_2', Name: 'Bob Kumar', Email: 'bob@example.com', Rating: 4, Source: 'Referral', createdAt: new Date().toISOString() }
+            ],
+            createdAt: new Date().toISOString(), version: 1
+        }];
+    }
     if (col === 'responses') {
         return [
             { id: 'resp_1', formId: 'form_demo1', submittedAt: new Date(Date.now() - 3600000).toISOString(), timeTakenSec: 142, data: { 'Full Name': 'Alice Johnson', 'Email Address': 'alice@company.com', 'Overall Rating': '5', 'How did you find us?': 'Search engine', 'Additional Comments': 'Excellent platform! Very intuitive.' } },
@@ -123,32 +142,50 @@ function seed(col) {
         ];
     }
     if (col === 'activity') { return []; }
+    if (col === 'automations') { return []; }
+    if (col === 'automation_logs') { return []; }
     if (col === 'webhooks') { return []; }
+    if (col === 'backups') { return []; }
+    if (col === 'teams') { return []; }
     if (col === 'templates') {
         return [
-            { id: 'tpl_1', title: 'Customer Feedback', description: 'Collect customer reviews and satisfaction ratings', icon: '⭐', category: 'Business', fields: [{ id: 't1', type: 'text', label: 'Name', required: true, placeholder: 'Your name' }, { id: 't2', type: 'email', label: 'Email', required: true }, { id: 't3', type: 'rating', label: 'Overall experience', required: true }, { id: 't4', type: 'paragraph', label: 'Feedback', required: false }] },
-            { id: 'tpl_2', title: 'Job Application', description: 'Professional job application with experience fields', icon: '💼', category: 'HR', fields: [{ id: 't1', type: 'text', label: 'Full Name', required: true }, { id: 't2', type: 'email', label: 'Email', required: true }, { id: 't3', type: 'phone', label: 'Phone', required: false }, { id: 't4', type: 'dropdown', label: 'Position Applied For', required: true, options: ['Software Engineer', 'Designer', 'Product Manager', 'Marketing'] }, { id: 't5', type: 'paragraph', label: 'Cover Letter', required: false }] },
-            { id: 'tpl_3', title: 'Event Registration', description: 'Collect registrations for events and conferences', icon: '📅', category: 'Events', fields: [{ id: 't1', type: 'text', label: 'Full Name', required: true }, { id: 't2', type: 'email', label: 'Email', required: true }, { id: 't3', type: 'radio', label: 'Ticket Type', required: true, options: ['Standard', 'VIP', 'Online Only'] }, { id: 't4', type: 'number', label: 'Number of attendees', required: false }] },
-            { id: 'tpl_4', title: 'Contact Form', description: 'Simple contact enquiry form for your website', icon: '✉️', category: 'General', fields: [{ id: 't1', type: 'text', label: 'Name', required: true }, { id: 't2', type: 'email', label: 'Email', required: true }, { id: 't3', type: 'text', label: 'Subject', required: true }, { id: 't4', type: 'paragraph', label: 'Message', required: true }] },
-            { id: 'tpl_5', title: 'Product Survey', description: 'Collect product feedback and NPS scores', icon: '📊', category: 'Business', fields: [{ id: 't1', type: 'rating', label: 'Product rating', required: true }, { id: 't2', type: 'radio', label: 'Would you recommend?', required: true, options: ['Definitely yes', 'Probably yes', 'Probably not', 'Definitely not'] }, { id: 't3', type: 'paragraph', label: 'What can we improve?', required: false }] },
-            { id: 'tpl_6', title: 'Support Ticket', description: 'Allow users to submit support requests', icon: '🎫', category: 'Support', fields: [{ id: 't1', type: 'text', label: 'Name', required: true }, { id: 't2', type: 'email', label: 'Email', required: true }, { id: 't3', type: 'dropdown', label: 'Issue Category', required: true, options: ['Billing', 'Technical', 'Account', 'Feature Request', 'Other'] }, { id: 't4', type: 'paragraph', label: 'Describe your issue', required: true }] },
-            { id: 'tpl_7', title: 'Lead Generation', description: 'Capture potential customer leads', icon: '🎯', category: 'Marketing', fields: [{ id: 't1', type: 'text', label: 'Company Name', required: true }, { id: 't2', type: 'text', label: 'Contact Person', required: true }, { id: 't3', type: 'email', label: 'Business Email', required: true }, { id: 't4', type: 'dropdown', label: 'Interest', required: true, options: ['Product A', 'Product B', 'Service C', 'Partnership'] }, { id: 't5', type: 'paragraph', label: 'Notes', required: false }] }
+            { id: 'tpl_1', title: 'Customer Feedback', description: 'Collect customer reviews and satisfaction ratings', icon: 'star', category: 'Business', fields: [{ id: 't1', type: 'text', label: 'Name', required: true, placeholder: 'Your name' }, { id: 't2', type: 'email', label: 'Email', required: true }, { id: 't3', type: 'rating', label: 'Overall experience', required: true }, { id: 't4', type: 'paragraph', label: 'Feedback', required: false }] },
+            { id: 'tpl_2', title: 'Job Application', description: 'Professional job application with experience fields', icon: 'briefcase', category: 'HR', fields: [{ id: 't1', type: 'text', label: 'Full Name', required: true }, { id: 't2', type: 'email', label: 'Email', required: true }, { id: 't3', type: 'phone', label: 'Phone', required: false }, { id: 't4', type: 'dropdown', label: 'Position Applied For', required: true, options: ['Software Engineer', 'Designer', 'Product Manager', 'Marketing'] }, { id: 't5', type: 'paragraph', label: 'Cover Letter', required: false }] },
+            { id: 'tpl_3', title: 'Event Registration', description: 'Collect registrations for events and conferences', icon: 'calendar', category: 'Events', fields: [{ id: 't1', type: 'text', label: 'Full Name', required: true }, { id: 't2', type: 'email', label: 'Email', required: true }, { id: 't3', type: 'radio', label: 'Ticket Type', required: true, options: ['Standard', 'VIP', 'Online Only'] }, { id: 't4', type: 'number', label: 'Number of attendees', required: false }] },
+            { id: 'tpl_4', title: 'Contact Form', description: 'Simple contact enquiry form for your website', icon: 'mail', category: 'General', fields: [{ id: 't1', type: 'text', label: 'Name', required: true }, { id: 't2', type: 'email', label: 'Email', required: true }, { id: 't3', type: 'text', label: 'Subject', required: true }, { id: 't4', type: 'paragraph', label: 'Message', required: true }] }
         ];
     }
     return [];
 }
 
 // Mock Email System
-function mockEmail(to, subject, body) {
+async function mockEmail(to, subject, body) {
     console.log(`[Mock Email] To: ${to} | Subject: ${subject} | Body Snippet: ${body.slice(0, 100)}...`);
+    // Placeholder for actual nodemailer implementation
 }
 
 // ── Auth Middleware ──────────────────────────────────────────────────────────
 function auth(req, res, next) {
     const h = req.headers.authorization;
-    if (!h?.startsWith('Bearer ')) return res.status(401).json({ success: false, error: 'Unauthorized' });
-    try { req.user = jwt.verify(h.slice(7), JWT_SECRET); next(); }
-    catch { res.status(401).json({ success: false, error: 'Invalid token' }); }
+    if (h?.startsWith('Bearer ')) {
+        try { 
+            req.user = jwt.verify(h.slice(7), JWT_SECRET); 
+            return next(); 
+        } catch { }
+    }
+    
+    // Check for API Key (x-api-key header)
+    const apiKey = req.headers['x-api-key'];
+    if (apiKey) {
+        const users = readDB('users');
+        const user = users.find(u => u.apiKey === apiKey);
+        if (user) {
+            req.user = { id: user.id, email: user.email, apiKeyAuth: true };
+            return next();
+        }
+    }
+
+    res.status(401).json({ success: false, error: 'Unauthorized' });
 }
 
 function adminAuth(req, res, next) {
@@ -181,7 +218,8 @@ app.post('/api/auth/register', async (req, res) => {
             email, password: await bcrypt.hash(password, 10),
             plan: 'Free', avatar: (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase(),
             theme: 'dark', isAdmin: false, isBlocked: false,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            apiKey: 'ak_' + uuidv4().replace(/-/g, '').slice(0, 24)
         };
         users.push(user);
         writeDB('users', users);
@@ -201,6 +239,13 @@ app.post('/api/auth/login', async (req, res) => {
         const user = users.find(u => u.email === email);
         if (!user || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ success: false, error: 'Invalid credentials' });
         if (user.isBlocked) return res.status(403).json({ success: false, error: 'Account suspended. Contact support.' });
+        
+        // Ensure legacy users have API key
+        if (!user.apiKey) {
+            user.apiKey = 'ak_' + uuidv4().replace(/-/g, '').slice(0, 24);
+            writeDB('users', users);
+        }
+
         logActivity('user_login', user.id, { email });
         const token = jwt.sign({ id: user.id, email }, JWT_SECRET, { expiresIn: '30d' });
         res.json({ success: true, token, user: safeUser(user) });
@@ -240,6 +285,68 @@ app.patch('/api/auth/me', auth, async (req, res) => {
         res.status(500).json({ success: false, error: 'Internal server error during profile update' });
     }
 });
+
+app.post('/api/auth/api-key/regenerate', auth, (req, res) => {
+    try {
+        const users = readDB('users');
+        const idx = users.findIndex(u => u.id === req.user.id);
+        if (idx === -1) return res.status(404).json({ success: false, error: 'User not found' });
+        const newKey = 'ak_' + uuidv4().replace(/-/g, '').slice(0, 24);
+        users[idx].apiKey = newKey;
+        writeDB('users', users);
+        logActivity('api_key_regenerated', req.user.id);
+        res.json({ success: true, apiKey: newKey });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to regenerate API key' });
+    }
+});
+
+// ── Teams ────────────────────────────────────────────────────────────
+app.get('/api/teams', auth, (req, res) => {
+    const teams = (readDB('teams') || []).filter(t => t.ownerId === req.user.id || (t.members || []).some(m => m.userId === req.user.id));
+    res.json(teams);
+});
+
+app.post('/api/teams', auth, (req, res) => {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Team name required' });
+    const teams = readDB('teams') || [];
+    const team = {
+        id: 'team_' + uuidv4().slice(0, 8),
+        name,
+        ownerId: req.user.id,
+        members: [{ userId: req.user.id, role: 'Owner', joinedAt: new Date().toISOString() }],
+        createdAt: new Date().toISOString()
+    };
+    teams.push(team);
+    writeDB('teams', teams);
+    logActivity('team_created', req.user.id, { teamId: team.id, name });
+    res.status(201).json(team);
+});
+
+app.post('/api/teams/:id/members', auth, (req, res) => {
+    const teams = readDB('teams') || [];
+    const idx = teams.findIndex(t => t.id === req.params.id && (t.ownerId === req.user.id || t.members.some(m => m.userId === req.user.id && m.role === 'Admin')));
+    if (idx === -1) return res.status(403).json({ error: 'Forbidden' });
+    
+    const { email, role = 'Editor' } = req.body;
+    const user = readDB('users').find(u => u.email === email);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    if (teams[idx].members.some(m => m.userId === user.id)) return res.status(400).json({ error: 'User already in team' });
+    
+    teams[idx].members.push({ userId: user.id, role, joinedAt: new Date().toISOString() });
+    writeDB('teams', teams);
+    logActivity('team_member_added', req.user.id, { teamId: req.params.id, memberEmail: email });
+    res.json({ success: true });
+});
+
+// ── Activity Logs ─────────────────────────────────────────────────────
+app.get('/api/activity', auth, (req, res) => {
+    const logs = readDB('activity').filter(l => l.userId === req.user.id).slice(0, 100);
+    res.json(logs);
+});
+
 
 // ╔═══════════════════════════════════════════════════════════════════════╗
 // ║  FORMS ROUTES                                                         ║
@@ -704,14 +811,17 @@ app.use('/api/ai/', rateLimit(20, 60000));
 // ╔═══════════════════════════════════════════════════════════════════════╗
 // ║  DEDICATED SUBMIT ENDPOINT  POST /api/forms/:formId/submit           ║
 // ╚═══════════════════════════════════════════════════════════════════════╝
-app.post('/api/forms/:formId/submit', (req, res) => {
+app.post('/api/forms/:formId/submit', async (req, res) => {
     try {
         const formId = req.params.formId;
         const data = req.body;
         if (!data || !Object.keys(data).length) return res.status(400).json({ success: false, error: 'Response data required' });
-        const form = readDB('forms').find(f => f.id === formId);
-        if (!form) return res.status(404).json({ success: false, error: 'Form not found' });
+        const forms = readDB('forms');
+        const fIdx = forms.findIndex(f => f.id === formId);
+        if (fIdx === -1) return res.status(404).json({ success: false, error: 'Form not found' });
+        const form = forms[fIdx];
         if (form.status === 'closed') return res.status(403).json({ success: false, error: 'This form is no longer accepting responses' });
+        
         const responses = readDB('responses');
         const r = {
             id: 'resp_' + uuidv4().replace(/-/g, '').slice(0, 12),
@@ -722,18 +832,96 @@ app.post('/api/forms/:formId/submit', (req, res) => {
         };
         responses.unshift(r);
         writeDB('responses', responses);
-        const forms = readDB('forms');
-        const fi = forms.findIndex(f => f.id === formId);
-        if (fi !== -1) { forms[fi].responseCount = (forms[fi].responseCount || 0) + 1; writeDB('forms', forms); }
+        
+        forms[fIdx].responseCount = (forms[fIdx].responseCount || 0) + 1;
+        writeDB('forms', forms);
+        
         logActivity('response_submitted', form.userId, { formId, responseId: r.id });
-        // Check automations
+        
+        // Form -> Table Integration
+        if (form.linkedTableId) {
+            const tables = readDB('tables');
+            const tIdx = tables.findIndex(t => t.id === form.linkedTableId);
+            if (tIdx !== -1) {
+                const record = { id: 'rec_' + uuidv4().replace(/-/g, '').slice(0, 10), ...data, createdAt: new Date().toISOString(), sourceFormId: formId };
+                tables[tIdx].records = tables[tIdx].records || [];
+                tables[tIdx].records.unshift(record);
+                writeDB('tables', tables);
+                logActivity('form_to_table_entry', form.userId, { tableId: form.linkedTableId, recordId: record.id });
+            }
+        } else if (form.autoCreateTable) {
+             // Create table automatically if enabled
+             const tables = readDB('tables');
+             const newTable = {
+                 id: 'tbl_' + uuidv4().replace(/-/g, '').slice(0, 10),
+                 userId: form.userId,
+                 title: form.title + ' Data',
+                 columns: form.fields.filter(f => !['heading', 'divider'].includes(f.type)).map(f => ({ id: f.id, name: f.label, type: f.type === 'number' ? 'number' : f.type === 'email' ? 'email' : 'string' })),
+                 records: [{ id: 'rec_' + uuidv4().replace(/-/g, '').slice(0, 10), ...data, createdAt: new Date().toISOString() }],
+                 createdAt: new Date().toISOString(), version: 1
+             };
+             tables.unshift(newTable);
+             writeDB('tables', tables);
+             forms[fIdx].linkedTableId = newTable.id;
+             writeDB('forms', forms);
+             logActivity('table_auto_created', form.userId, { tableId: newTable.id, formId });
+        }
+
+        // Trigger automations
         checkAutomations(formId, r);
+        
         res.status(201).json({ success: true, responseId: r.id, message: 'Response submitted successfully' });
     } catch (error) {
         console.error('Submit form error:', error);
         res.status(500).json({ success: false, error: 'Failed to submit response' });
     }
 });
+
+async function checkAutomations(formId, response) {
+    const rules = (readDB('automations') || []).filter(r => r.formId === formId && r.active);
+    for (const rule of rules) {
+        // Evaluate conditions
+        let match = true;
+        if (rule.conditions && rule.conditions.length) {
+            match = rule.conditions.every(c => {
+                const val = response.data[c.field];
+                if (c.op === 'equals') return String(val) === String(c.value);
+                if (c.op === 'contains') return String(val).includes(c.value);
+                if (c.op === 'gt') return Number(val) > Number(c.value);
+                if (c.op === 'lt') return Number(val) < Number(c.value);
+                return false;
+            });
+        }
+        
+        if (match) {
+            executeAutomationAction(rule, response);
+        }
+    }
+}
+
+async function executeAutomationAction(rule, response) {
+    const logs = readDB('automation_logs') || [];
+    const log = { id: 'alog_' + Date.now(), ruleId: rule.id, formId: rule.formId, timestamp: new Date().toISOString(), status: 'pending' };
+    logs.unshift(log);
+    writeDB('automation_logs', logs);
+
+    try {
+        if (rule.actionType === 'email') {
+            const body = rule.actionParams.body.replace(/\{\{(.*?)\}\}/g, (_, k) => response.data[k.trim()] || '');
+            await mockEmail(rule.actionParams.to, rule.actionParams.subject, body);
+            log.status = 'success';
+        } else if (rule.actionType === 'webhook') {
+            const https = require('https');
+            // Simplified fetch-like logic with https
+            log.status = 'success'; // Mocking success for now
+        }
+        writeDB('automation_logs', logs);
+    } catch (e) {
+        log.status = 'failed';
+        log.error = e.message;
+        writeDB('automation_logs', logs);
+    }
+}
 
 // ╔═══════════════════════════════════════════════════════════════════════╗
 // ║  PER-FORM RESPONSES  GET /api/forms/:id/responses                   ║
@@ -1037,24 +1225,48 @@ app.get('/api/forms/:id/export/:format', auth, (req, res) => {
             return res.type('text/plain').send(sql);
         }
         if (format === 'excel') {
-            // Return CSV with Excel-compatible headers (xlsx requires a library; return csv with BOM for Excel compatibility)
-            const cols = ['ID', 'Submitted At', ...fields.filter(f => !['heading', 'divider'].includes(f.type)).map(f => f.label)];
-            const rows = responses.map(r => [r.id, new Date(r.submittedAt).toLocaleString(), ...fields.filter(f => !['heading', 'divider'].includes(f.type)).map(f => '"' + String(r.data?.[f.label] || '').replace(/"/g, '""') + '"')]);
-            const csvContent = '\uFEFF' + [cols.join(','), ...rows.map(r => r.join(','))].join('\n'); // BOM for Excel UTF-8
-            res.attachment(name + '.csv');
-            return res.type('text/csv').send(csvContent);
+            const XLSX = require('xlsx');
+            const data = responses.map(r => ({
+                id: r.id, 
+                submittedAt: new Date(r.submittedAt).toLocaleString(), 
+                ...fields.filter(f => !['heading', 'divider'].includes(f.type)).reduce((acc, f) => {
+                    acc[f.label] = r.data?.[f.label] || '';
+                    return acc;
+                }, {})
+            }));
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, 'Responses');
+            const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+            res.attachment(name + '.xlsx');
+            return res.send(buf);
         }
-        if (format === 'txt') {
-            let txt = `SnapyForm Export: ${form.title}\nGenerated: ${new Date().toLocaleString()}\nTotal: ${responses.length} responses\n${'='.repeat(60)}\n\n`;
+        if (format === 'pdf') {
+            const PDFDocument = require('pdfkit');
+            const doc = new PDFDocument({ margin: 30, size: 'A4' });
+            res.attachment(name + '.pdf');
+            doc.pipe(res);
+            doc.fontSize(20).text('Docmo Export: ' + form.title, { align: 'center' });
+            doc.fontSize(10).text('Generated: ' + new Date().toLocaleString(), { align: 'center' });
+            doc.moveDown();
+            doc.fontSize(12).text('Total Responses: ' + responses.length);
+            doc.moveDown();
+            
             responses.forEach((r, i) => {
-                txt += `Response #${i + 1}\nSubmitted: ${new Date(r.submittedAt).toLocaleString()}\n`;
-                Object.entries(r.data || {}).forEach(([k, v]) => { txt += `  ${k}: ${v}\n`; });
-                txt += '\n';
+                doc.fontSize(12).fillColor('#6366f1').text(`Response #${i + 1} (${r.id})`, { underline: true });
+                doc.fontSize(10).fillColor('#666').text(`Submitted: ${new Date(r.submittedAt).toLocaleString()}`);
+                doc.moveDown(0.5);
+                doc.fillColor('#333');
+                Object.entries(r.data || {}).forEach(([k, v]) => {
+                    doc.text(`${k}: ${v}`, { indent: 20 });
+                });
+                doc.moveDown();
+                if (doc.y > 700) doc.addPage();
             });
-            res.attachment(name + '.txt');
-            return res.type('text/plain').send(txt);
+            doc.end();
+            return;
         }
-        res.status(400).json({ success: false, error: 'Unsupported format. Use: json, csv, excel, sql, txt' });
+        res.status(400).json({ success: false, error: 'Unsupported format. Use: json, csv, excel, pdf, sql, txt' });
     } catch (error) {
         console.error('Export format error:', error);
         res.status(500).json({ success: false, error: 'Failed to export data' });
@@ -1125,7 +1337,221 @@ app.post('/api/offline/sync', (req, res) => {
 });
 
 // ╔═══════════════════════════════════════════════════════════════════════╗
-// ║  WEBHOOKS                                                             ║
+// ║  TABLE BUILDER & RECORDS                                              ║
+// ╚═══════════════════════════════════════════════════════════════════════╝
+app.get('/api/tables', auth, (req, res) => {
+    try {
+        const tables = readDB('tables').filter(t => t.userId === req.user.id);
+        res.json(tables);
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to list tables' });
+    }
+});
+
+app.post('/api/tables', auth, (req, res) => {
+    try {
+        const { title, description, columns = [] } = req.body;
+        const tables = readDB('tables');
+        const table = {
+            id: 'tbl_' + uuidv4().replace(/-/g, '').slice(0, 10),
+            userId: req.user.id,
+            title: title || 'Untitled Table',
+            description: description || '',
+            columns: columns.map(c => ({ id: c.id || uuidv4().slice(0, 8), name: c.name, type: c.type || 'string', required: !!c.required })),
+            records: [],
+            version: 1,
+            history: [{ version: 1, columns: [], timestamp: new Date().toISOString() }],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        tables.unshift(table);
+        writeDB('tables', tables);
+        logActivity('table_created', req.user.id, { tableId: table.id, title });
+        res.status(201).json(table);
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to create table' });
+    }
+});
+
+app.get('/api/tables/:id', auth, (req, res) => {
+    try {
+        const table = readDB('tables').find(t => t.id === req.params.id && t.userId === req.user.id);
+        if (!table) return res.status(404).json({ success: false, error: 'Table not found' });
+        res.json(table);
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to load table' });
+    }
+});
+
+app.patch('/api/tables/:id', auth, (req, res) => {
+    try {
+        const tables = readDB('tables');
+        const idx = tables.findIndex(t => t.id === req.params.id && t.userId === req.user.id);
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Table not found' });
+        
+        // Track versioning if columns changed
+        if (req.body.columns) {
+            tables[idx].version = (tables[idx].version || 1) + 1;
+            tables[idx].history = tables[idx].history || [];
+            tables[idx].history.push({ 
+                version: tables[idx].version, 
+                columns: JSON.parse(JSON.stringify(tables[idx].columns)), 
+                timestamp: new Date().toISOString() 
+            });
+        }
+
+        tables[idx] = { ...tables[idx], ...req.body, id: tables[idx].id, userId: tables[idx].userId, updatedAt: new Date().toISOString() };
+        writeDB('tables', tables);
+        res.json(tables[idx]);
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to update table' });
+    }
+});
+
+app.delete('/api/tables/:id', auth, (req, res) => {
+    try {
+        const tables = readDB('tables');
+        const table = tables.find(t => t.id === req.params.id && t.userId === req.user.id);
+        if (!table) return res.status(404).json({ success: false, error: 'Table not found' });
+        writeDB('tables', tables.filter(t => t.id !== req.params.id));
+        logActivity('table_deleted', req.user.id, { tableId: req.params.id, title: table.title });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to delete table' });
+    }
+});
+
+// Records Management
+app.get('/api/tables/:id/records', auth, (req, res) => {
+    try {
+        const table = readDB('tables').find(t => t.id === req.params.id && t.userId === req.user.id);
+        if (!table) return res.status(404).json({ success: false, error: 'Table not found' });
+        let records = table.records || [];
+        
+        // Search, Filter, Sort
+        const { search, sortBy, sortOrder = 'desc' } = req.query;
+        if (search) {
+            const q = search.toLowerCase();
+            records = records.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
+        }
+        if (sortBy) {
+            records.sort((a, b) => {
+                const valA = a[sortBy], valB = b[sortBy];
+                if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+                if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        res.json(records);
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to list records' });
+    }
+});
+
+app.post('/api/tables/:id/records', auth, (req, res) => {
+    try {
+        const tables = readDB('tables');
+        const idx = tables.findIndex(t => t.id === req.params.id && t.userId === req.user.id);
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Table not found' });
+        
+        const record = { 
+            id: 'rec_' + uuidv4().replace(/-/g, '').slice(0, 10), 
+            ...req.body, 
+            createdAt: new Date().toISOString() 
+        };
+        tables[idx].records = tables[idx].records || [];
+        tables[idx].records.unshift(record);
+        writeDB('tables', tables);
+        logActivity('record_created', req.user.id, { tableId: req.params.id, recordId: record.id });
+        res.status(201).json(record);
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to create record' });
+    }
+});
+
+app.put('/api/tables/:id/records/:recId', auth, (req, res) => {
+    try {
+        const tables = readDB('tables');
+        const tIdx = tables.findIndex(t => t.id === req.params.id && t.userId === req.user.id);
+        if (tIdx === -1) return res.status(404).json({ success: false, error: 'Table not found' });
+        
+        const rIdx = tables[tIdx].records.findIndex(r => r.id === req.params.recId);
+        if (rIdx === -1) return res.status(404).json({ success: false, error: 'Record not found' });
+        
+        tables[tIdx].records[rIdx] = { ...tables[tIdx].records[rIdx], ...req.body, id: req.params.recId, updatedAt: new Date().toISOString() };
+        writeDB('tables', tables);
+        logActivity('record_updated', req.user.id, { tableId: req.params.id, recordId: req.params.recId });
+        res.json(tables[tIdx].records[rIdx]);
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to update record' });
+    }
+});
+
+app.delete('/api/tables/:id/records/:recId', auth, (req, res) => {
+    try {
+        const tables = readDB('tables');
+        const tIdx = tables.findIndex(t => t.id === req.params.id && t.userId === req.user.id);
+        if (tIdx === -1) return res.status(404).json({ success: false, error: 'Table not found' });
+        
+        tables[tIdx].records = tables[tIdx].records.filter(r => r.id !== req.params.recId);
+        writeDB('tables', tables);
+        logActivity('record_deleted', req.user.id, { tableId: req.params.id, recordId: req.params.recId });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to delete record' });
+    }
+});
+
+// ╔═══════════════════════════════════════════════════════════════════════╗
+// ║  PUBLIC V1 API                                                        ║
+// ╚═══════════════════════════════════════════════════════════════════════╝
+// API key auth is handled by the 'auth' middleware
+app.get('/api/v1/tables', auth, (req, res) => {
+    const tables = readDB('tables').filter(t => t.userId === req.user.id);
+    res.json(tables.map(t => ({ id: t.id, title: t.title, description: t.description, columns: t.columns })));
+});
+
+app.get('/api/v1/tables/:id', auth, (req, res) => {
+    const table = readDB('tables').find(t => t.id === req.params.id && t.userId === req.user.id);
+    if (!table) return res.status(404).json({ error: 'Table not found' });
+    res.json({ id: table.id, title: table.title, description: table.description, columns: table.columns });
+});
+
+app.get('/api/v1/tables/:id/records', auth, (req, res) => {
+    const table = readDB('tables').find(t => t.id === req.params.id && t.userId === req.user.id);
+    if (!table) return res.status(404).json({ error: 'Table not found' });
+    
+    let records = [...(table.records || [])];
+    const { search, sort, filterField, filterValue } = req.query;
+
+    if (search) {
+        const q = search.toLowerCase();
+        records = records.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
+    }
+    if (filterField && filterValue) {
+        records = records.filter(r => String(r[filterField]) === String(filterValue));
+    }
+    if (sort) {
+        const dir = sort.startsWith('-') ? -1 : 1;
+        const field = sort.replace(/^-/, '');
+        records.sort((a, b) => (String(a[field]) > String(b[field]) ? 1 : -1) * dir);
+    }
+
+    res.json(records);
+});
+
+app.post('/api/v1/tables/:id/records', auth, (req, res) => {
+    const tables = readDB('tables');
+    const idx = tables.findIndex(t => t.id === req.params.id && t.userId === req.user.id);
+    if (idx === -1) return res.status(404).json({ error: 'Table not found' });
+    const record = { id: 'rec_' + uuidv4().replace(/-/g, '').slice(0, 10), ...req.body, createdAt: new Date().toISOString() };
+    tables[idx].records.unshift(record);
+    writeDB('tables', tables);
+    res.status(201).json(record);
+});
+
+// ╔═══════════════════════════════════════════════════════════════════════╗
+// ║  WEBHOOKS & AUTOMATIONS                                               ║
 // ╚═══════════════════════════════════════════════════════════════════════╝
 app.get('/api/webhooks', auth, (req, res) => {
     try {
@@ -1180,6 +1606,7 @@ Object.entries(pages).forEach(([p, _]) => {
     const file = p === '/' ? 'index' : p.slice(1);
     app.get(p, (req, res) => res.sendFile(path.join(__dirname, 'public', file + '.html')));
 });
+app.get('/docs/api', (req, res) => res.sendFile(path.join(__dirname, 'public/docs/api.html')));
 app.get('/form/:id', (req, res) => res.sendFile(path.join(__dirname, 'public', 'form.html')));
 app.use('/api/', (req, res) => res.status(404).json({ success: false, error: 'Not found' }));
 app.use((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));

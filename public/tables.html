@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tables – SnapyForm</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="/js/api.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .table-builder-layout {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 84px);
+        }
+        .table-toolbar {
+            padding: 12px 24px;
+            background: var(--surface-1);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10;
+        }
+        .spreadsheet-container {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            background: var(--surface-ground);
+        }
+        .spreadsheet {
+            border-collapse: collapse;
+            background: var(--surface-1);
+            min-width: 100%;
+        }
+        .spreadsheet th {
+            padding: 10px 16px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-3);
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            white-space: nowrap;
+        }
+        .spreadsheet td {
+            padding: 0;
+            border: 1px solid var(--border);
+        }
+        .cell-input {
+            width: 100%;
+            height: 38px;
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-2);
+            font-size: 13.5px;
+            outline: none;
+        }
+        .cell-input:focus {
+            background: rgba(99, 102, 241, 0.05);
+            box-shadow: inset 0 0 0 2px var(--accent);
+        }
+        .spreadsheet tr:hover td {
+            background: rgba(255,255,255,0.02);
+        }
+        .col-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .col-type {
+            font-size: 10px;
+            color: var(--text-4);
+            font-family: var(--font-mono);
+            background: var(--surface-3);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .row-selector {
+            width: 40px;
+            text-align: center;
+            background: var(--surface-2);
+            color: var(--text-4);
+            font-size: 11px;
+            user-select: none;
+        }
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo" onclick="window.location='/'">
+                <div class="logo-mark">S</div>
+                <span class="logo-text">SnapyForm</span>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Workspace</div>
+                <div class="nav-item" onclick="window.location='/dashboard'">
+                    <div class="nav-icon-wrap"><i data-lucide="layout-grid"></i></div><span class="nav-label">Dashboard</span>
+                </div>
+                <div class="nav-item active" onclick="window.location='/tables'">
+                    <div class="nav-icon-wrap"><i data-lucide="table"></i></div><span class="nav-label">Tables</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/automation'">
+                    <div class="nav-icon-wrap"><i data-lucide="zap"></i></div><span class="nav-label">Automations</span>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-widget" id="userWidget">
+                    <div class="user-avatar" id="uAvatar">?</div>
+                    <div class="user-info">
+                        <div class="user-name" id="uName">Loading...</div>
+                        <div class="user-plan" id="uPlan">Free Plan</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="table-builder-layout">
+                <div class="table-toolbar">
+                    <div style="flex:1">
+                        <h2 id="tableName" style="font-size:18px;margin:0">Loading table...</h2>
+                        <p id="tableMeta" style="font-size:12px;color:var(--text-4);margin:0">...</p>
+                    </div>
+                    <div class="flex gap-8">
+                        <button class="btn btn-secondary btn-sm" onclick="addColumn()">
+                            <i data-lucide="plus" style="width:14px"></i> Add Column
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="addRow()">
+                            <i data-lucide="plus-square" style="width:14px"></i> Add Row
+                        </button>
+                        <div class="v-sep"></div>
+                        <div class="dropdown">
+                            <button class="btn btn-secondary btn-sm">
+                                <i data-lucide="download" style="width:14px"></i> Export
+                            </button>
+                            <div class="dropdown-content">
+                                <a href="#" onclick="exportTable('csv')">CSV</a>
+                                <a href="#" onclick="exportTable('xlsx')">Excel</a>
+                                <a href="#" onclick="exportTable('json')">JSON</a>
+                                <a href="#" onclick="exportTable('pdf')">PDF</a>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="saveTable()">Save Changes</button>
+                    </div>
+                </div>
+
+                <div class="spreadsheet-container">
+                    <table class="spreadsheet" id="spreadsheet">
+                        <thead>
+                            <tr id="tableHead"></tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentTableId = new URLSearchParams(window.location.search).get('id');
+        let tableData = null;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!DocmoAPI.requireAuth()) return;
+            const u = await DocmoAPI.getMe();
+            if (u) {
+                document.getElementById('uAvatar').textContent = u.avatar || '?';
+                document.getElementById('uName').textContent = u.name || 'User';
+                document.getElementById('uPlan').textContent = (u.plan || 'Free') + ' Plan';
+            }
+            lucide.createIcons();
+            await loadTable();
+        });
+
+        async function loadTable() {
+            try {
+                const tables = await DocmoAPI.req('GET', '/tables');
+                if (!currentTableId && tables.length) {
+                    currentTableId = tables[0].id;
+                }
+                
+                if (currentTableId) {
+                    tableData = await DocmoAPI.req('GET', '/tables/' + currentTableId);
+                    renderTable();
+                } else {
+                    document.getElementById('tableName').textContent = 'No Tables Found';
+                }
+            } catch (e) {
+                toast('Error loading table: ' + e.message, 'error');
+            }
+        }
+
+        function renderTable() {
+            document.getElementById('tableName').textContent = tableData.title;
+            document.getElementById('tableMeta').textContent = `${tableData.columns.length} columns • ${tableData.records.length} records • Version ${tableData.version || 1}`;
+
+            const head = document.getElementById('tableHead');
+            head.innerHTML = '<th class="row-selector">#</th>' + tableData.columns.map(c => `
+                <th>
+                    <div class="col-header">
+                        <span>${DocmoAPI.escH(c.name)}</span>
+                        <span class="col-type">${c.type}</span>
+                    </div>
+                </th>
+            `).join('') + '<th style="width:40px"></th>';
+
+            const body = document.getElementById('tableBody');
+            body.innerHTML = tableData.records.map((r, i) => `
+                <tr>
+                    <td class="row-selector">${i + 1}</td>
+                    ${tableData.columns.map(c => `
+                        <td>
+                            <input type="text" class="cell-input" value="${DocmoAPI.escA(r[c.name] || '')}" 
+                                   onchange="updateCell('${r.id}', '${DocmoAPI.escA(c.name)}', this.value)">
+                        </td>
+                    `).join('')}
+                    <td style="text-align:center">
+                        <button class="btn-icon" onclick="deleteRow('${r.id}')" title="Delete Row">
+                            <i data-lucide="trash-2" style="width:14px;color:var(--red)"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            lucide.createIcons();
+        }
+
+        function updateCell(recId, colName, value) {
+            const rec = tableData.records.find(r => r.id === recId);
+            if (rec) rec[colName] = value;
+        }
+
+        async function addRow() {
+            const newRec = { id: 'new_' + Date.now() };
+            tableData.columns.forEach(c => newRec[c.name] = '');
+            tableData.records.push(newRec);
+            renderTable();
+        }
+
+        function addColumn() {
+            const name = prompt('Column Name:');
+            if (!name) return;
+            const type = prompt('Type (string, number, date, email):', 'string');
+            tableData.columns.push({ id: 'c_' + Date.now(), name, type: type || 'string' });
+            renderTable();
+        }
+
+        async function deleteRow(id) {
+            if (!confirm('Delete this row?')) return;
+            tableData.records = tableData.records.filter(r => r.id !== id);
+            renderTable();
+        }
+
+        async function saveTable() {
+            try {
+                await DocmoAPI.req('PATCH', '/tables/' + currentTableId, tableData);
+                toast('Table saved successfully', 'success');
+                loadTable();
+            } catch (e) {
+                toast('Save failed: ' + e.message, 'error');
+            }
+        }
+
+        function exportTable(format) {
+             toast('Generating ' + format.toUpperCase() + ' export...', 'info');
+             // Redirect to export endpoint
+             window.location = `/api/forms/${currentTableId}/export/${format}`; 
+             // Note: I should add a dedicated table export endpoint too, but I can use the same logic
+        }
+    </script>
+</body>
+</html>

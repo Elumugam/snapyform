@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation – SnapyForm</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="/js/api.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .doc-section { margin-bottom: 40px; }
+        .doc-section h2 { margin-bottom: 12px; font-size: 20px; }
+        .endpoint { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+        .endpoint-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .method { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #fff; }
+        .method.get { background: #3b82f6; }
+        .method.post { background: #10b981; }
+        .method.put { background: #f59e0b; }
+        .method.delete { background: #ef4444; }
+        .url { font-family: var(--font-mono); font-size: 13px; color: var(--text-2); }
+        pre { background: #000; color: #10b981; padding: 12px; border-radius: 8px; font-size: 12px; overflow-x: auto; margin: 12px 0; border: 1px solid #333; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo" onclick="window.location='/'">
+                <div class="logo-mark">S</div>
+                <span class="logo-text">SnapyForm</span>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Documentation</div>
+                <div class="nav-item active" onclick="window.location='/docs/api'">
+                    <div class="nav-icon-wrap"><i data-lucide="book-open"></i></div><span class="nav-label">V1 API</span>
+                </div>
+                <div class="nav-item" onclick="window.location='/dashboard'">
+                    <div class="nav-icon-wrap"><i data-lucide="arrow-left"></i></div><span class="nav-label">Back to Dash</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="page-shell" style="max-width:900px">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">V1 API Documentation</div>
+                        <div class="page-subtitle">Build powerful integrations with SnapyForm</div>
+                    </div>
+                </div>
+
+                <div class="doc-section">
+                    <h2>Authentication</h2>
+                    <p class="mb-12">All requests must include your API key in the <code>x-api-key</code> header.</p>
+                    <pre>curl -H "x-api-key: YOUR_API_KEY" https://snapyform.com/api/v1/tables</pre>
+                </div>
+
+                <div class="doc-section">
+                    <h2>Tables</h2>
+                    
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="url">/api/v1/tables</span>
+                        </div>
+                        <p style="font-size:13px; color:var(--text-3)">List all tables you have access to.</p>
+                    </div>
+
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="url">/api/v1/tables/{tableId}</span>
+                        </div>
+                        <p style="font-size:13px; color:var(--text-3)">Get table schema and metadata.</p>
+                    </div>
+
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="url">/api/v1/tables/{tableId}/records</span>
+                        </div>
+                        <p style="font-size:13px; color:var(--text-3)">Fetch records from a table. Supports <code>search</code>, <code>sort</code>, and <code>filter</code> query params.</p>
+                    </div>
+
+                    <div class="endpoint">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span class="url">/api/v1/tables/{tableId}/records</span>
+                        </div>
+                        <p style="font-size:13px; color:var(--text-3)">Create a new record in the table.</p>
+                        <pre>{
+  "name": "John Doe",
+  "email": "john@example.com"
+}</pre>
+                    </div>
+                </div>
+
+                <div class="doc-section">
+                    <h2>Automation Webhooks</h2>
+                    <p style="font-size:14px">You can trigger external webhooks automatically on form submission. Configure them in the <a href="/automation" class="color-accent">Automations</a> tab.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

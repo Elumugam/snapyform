@@ -61,6 +61,20 @@ const DocmoAPI = {
     getResponses: formId => DocmoAPI.req('GET', formId ? '/responses?formId=' + formId : '/responses'),
     getFormResponses: formId => DocmoAPI.req('GET', '/forms/' + formId + '/responses'),
 
+    // ── Teams ────────────────────────────────────────────────────────────
+    getTeams: () => DocmoAPI.req('GET', '/teams'),
+    createTeam: name => DocmoAPI.req('POST', '/teams', { name }),
+    addTeamMember: (id, email, role) => DocmoAPI.req('POST', `/teams/${id}/members`, { email, role }),
+
+    // ── Tables ───────────────────────────────────────────────────────────
+    getTables: () => DocmoAPI.req('GET', '/tables'),
+    getTable: id => DocmoAPI.req('GET', '/tables/' + id),
+    saveTable: (id, data) => DocmoAPI.req('POST', '/tables/' + id, data),
+    deleteTable: id => DocmoAPI.req('DELETE', '/tables/' + id),
+    exportTable: (id, format) => {
+        window.location = `/api/tables/${id}/export?format=${format}&token=${DocmoAPI.getToken()}`;
+    },
+
     // Submit (public) — works with service worker offline queueing
     submitResponse(formId, data, timeTakenSec = 0) {
         return fetch('/api/forms/' + formId + '/submit', {

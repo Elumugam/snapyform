@@ -1117,6 +1117,10 @@ table.data-table {
   border-color: var(--accent);
 }
 
+.mobile-top-bar {
+  display: none;
+}
+
 /* Tablet (up to 1024px) */
 @media (max-width: 1024px) {
   :root {
@@ -1221,21 +1225,27 @@ table.data-table {
 
   /* Table responsiveness */
   .user-table-row,
-  .form-table-row {
+  .form-table-row,
+  .form-row,
+  .response-row {
     grid-template-columns: 1fr !important;
     gap: 8px;
     padding: 16px;
   }
 
   .user-table-row>div,
-  .form-table-row>div {
+  .form-table-row>div,
+  .form-row>div,
+  .response-row>div {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
   .user-table-row>div::before,
-  .form-table-row>div::before {
+  .form-table-row>div::before,
+  .form-row>div::before,
+  .response-row>div::before {
     content: attr(data-label);
     font-weight: 600;
     color: var(--text-3);
@@ -1244,8 +1254,18 @@ table.data-table {
   }
 
   /* Hide labels if data-label is missing (legacy compat) */
-  .user-table-row>div:not([data-label])::before {
+  .user-table-row>div:not([data-label])::before,
+  .form-row>div:not([data-label])::before,
+  .response-row>div:not([data-label])::before {
     display: none;
+  }
+
+  .form-row-header {
+    display: none !important;
+  }
+
+  .response-row[style*="cursor:default"] {
+    display: none !important;
   }
 
   /* Tab scrolling */

@@ -7,6 +7,7 @@
     <title>Settings – SnapyForm</title>
     <link rel="stylesheet" href="/styles/main.css">
     <script src="/js/api.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
@@ -15,126 +16,134 @@
             <div class="sidebar-logo" onclick="window.location='/'">
                 <div class="logo-mark">S</div>
                 <span class="logo-text">SnapyForm</span>
-                <span class="logo-badge">Beta</span>
             </div>
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Workspace</div>
                 <div class="nav-item" onclick="window.location='/dashboard'">
-                    <div class="nav-icon-wrap">⊞</div><span class="nav-label">Dashboard</span>
+                    <div class="nav-icon-wrap"><i data-lucide="layout-grid"></i></div><span class="nav-label">Dashboard</span>
                 </div>
-                <div class="nav-item" onclick="window.location='/dashboard#forms'">
-                    <div class="nav-icon-wrap">📋</div><span class="nav-label">My Forms</span>
+                <div class="nav-item" onclick="window.location='/tables'">
+                    <div class="nav-icon-wrap"><i data-lucide="table"></i></div><span class="nav-label">Tables</span>
                 </div>
                 <div class="nav-item" onclick="window.location='/automation'">
-                    <div class="nav-icon-wrap">⚡</div><span class="nav-label">Automations</span>
+                    <div class="nav-icon-wrap"><i data-lucide="zap"></i></div><span class="nav-label">Automations</span>
                 </div>
                 <div class="nav-item" onclick="window.location='/templates'">
-                    <div class="nav-icon-wrap">◧</div><span class="nav-label">Templates</span>
+                    <div class="nav-icon-wrap"><i data-lucide="layout"></i></div><span class="nav-label">Templates</span>
                 </div>
             </div>
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Data & Performance</div>
                 <div class="nav-item" onclick="window.location='/responses'">
-                    <div class="nav-icon-wrap">≡</div><span class="nav-label">Responses</span>
+                    <div class="nav-icon-wrap"><i data-lucide="database"></i></div><span class="nav-label">Responses</span>
                 </div>
                 <div class="nav-item" onclick="window.location='/analytics'">
-                    <div class="nav-icon-wrap">📈</div><span class="nav-label">Analytics</span>
+                    <div class="nav-icon-wrap"><i data-lucide="bar-chart-3"></i></div><span class="nav-label">Analytics</span>
                 </div>
                 <div class="nav-item" onclick="window.location='/export'">
-                    <div class="nav-icon-wrap">↓</div><span class="nav-label">Export</span>
+                    <div class="nav-icon-wrap"><i data-lucide="download"></i></div><span class="nav-label">Export</span>
                 </div>
             </div>
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Account</div>
                 <div class="nav-item active" onclick="window.location='/settings'">
-                    <div class="nav-icon-wrap">◎</div><span class="nav-label">Settings</span>
+                    <div class="nav-icon-wrap"><i data-lucide="settings"></i></div><span class="nav-label">Settings</span>
                 </div>
                 <div class="nav-item" id="adminNavItem" style="display:none" onclick="window.location='/admin'">
-                    <div class="nav-icon-wrap">⚿</div><span class="nav-label">Admin</span><span class="admin-badge"
-                        style="margin-left:auto">ADMIN</span>
+                    <div class="nav-icon-wrap"><i data-lucide="shield"></i></div><span class="nav-label">Admin</span>
                 </div>
             </div>
             <div class="sidebar-footer">
                 <div class="user-widget" onclick="window.location='/settings'">
                     <div class="user-avatar" id="uAvatar">?</div>
-                    <div>
+                    <div class="user-info">
                         <div class="user-name" id="uName">Loading...</div>
                         <div class="user-plan" id="uPlan">Free Plan</div>
                     </div>
-                    <div class="spacer"></div>
-                    <span style="font-size:13px;color:var(--text-4);cursor:pointer;padding:4px"
-                        onclick="event.stopPropagation();DocmoAPI.logout()" title="Logout">⏻</span>
                 </div>
             </div>
         </aside>
 
         <main class="main">
             <div class="mobile-top-bar">
-                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <button class="mobile-menu-btn" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
                 <div class="logo-mark" style="width:24px;height:24px;font-size:12px">S</div>
                 <span class="logo-text" style="font-size:14px">SnapyForm</span>
             </div>
-            <div class="page-shell" style="max-width:760px">
+            <div class="page-shell" style="max-width:800px">
                 <div class="page-header">
                     <div>
                         <div class="page-title">Settings</div>
-                        <div class="page-subtitle">Manage your account and preferences</div>
+                        <div class="page-subtitle">Manage your account, teams, and API access</div>
                     </div>
                 </div>
 
                 <div class="tabs" id="tabs">
                     <div class="tab active" onclick="switchTab('profile',this)">Profile</div>
+                    <div class="tab" onclick="switchTab('teams',this)">Teams</div>
+                    <div class="tab" onclick="switchTab('developer',this)">Developer</div>
                     <div class="tab" onclick="switchTab('security',this)">Security</div>
                     <div class="tab" onclick="switchTab('appearance',this)">Appearance</div>
-                    <div class="tab" onclick="switchTab('notifications',this)">Notifications</div>
                     <div class="tab" onclick="switchTab('danger',this)">Danger Zone</div>
                 </div>
 
                 <!-- PROFILE -->
                 <div class="tab-content active" id="tab-profile">
                     <div class="card mb-16">
-                        <div class="card-header">
-                            <div class="card-title">Profile Information</div>
-                        </div>
+                        <div class="card-header"><div class="card-title">Profile Information</div></div>
                         <div class="card-body">
                             <div class="flex items-center gap-16 mb-20">
-                                <div class="user-avatar" id="avatarPreview"
-                                    style="width:56px;height:56px;font-size:20px">?</div>
+                                <div class="user-avatar" id="avatarPreview" style="width:56px;height:56px;font-size:20px">?</div>
                                 <div>
                                     <div style="font-size:13px;font-weight:600;margin-bottom:4px">Profile Photo</div>
-                                    <div style="font-size:12px;color:var(--text-3)">Avatar is auto-generated from your
-                                        initials</div>
+                                    <div style="font-size:12px;color:var(--text-3)">Avatar is auto-generated from your initials</div>
                                 </div>
                             </div>
                             <div class="input-row mb-12">
-                                <div class="field"><label class="label">First Name</label><input type="text"
-                                        class="input" id="pfirst" placeholder="First name"></div>
-                                <div class="field"><label class="label">Last Name</label><input type="text"
-                                        class="input" id="plast" placeholder="Last name"></div>
+                                <div class="field"><label class="label">First Name</label><input type="text" class="input" id="pfirst"></div>
+                                <div class="field"><label class="label">Last Name</label><input type="text" class="input" id="plast"></div>
                             </div>
-                            <div class="field"><label class="label">Email Address</label><input type="email"
-                                    class="input" id="pemail" placeholder="you@company.com"></div>
-                            <div class="field"><label class="label">Company / Organization</label><input type="text"
-                                    class="input" id="pcompany" placeholder="Your organization name"></div>
+                            <div class="field"><label class="label">Email Address</label><input type="email" class="input" id="pemail"></div>
                         </div>
-                        <div class="card-footer"><button class="btn btn-primary" onclick="saveProfile()">Save
-                                Changes</button></div>
+                        <div class="card-footer"><button class="btn btn-primary" onclick="saveProfile()">Save Changes</button></div>
                     </div>
+                </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">Subscription Plan</div>
+                <!-- TEAMS -->
+                <div class="tab-content" id="tab-teams">
+                    <div class="card mb-16">
+                        <div class="card-header flex items-center justify-between">
+                            <div class="card-title">My Teams</div>
+                            <button class="btn btn-primary btn-sm" onclick="createTeam()">Create Team</button>
                         </div>
+                        <div class="card-body" id="teamsList">
+                            <div class="text-center py-24 color-text-4">No teams created yet.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DEVELOPER -->
+                <div class="tab-content" id="tab-developer">
+                    <div class="card mb-16">
+                        <div class="card-header"><div class="card-title">API Keys</div></div>
                         <div class="card-body">
-                            <div class="flex items-center gap-12">
-                                <div>
-                                    <div style="font-size:14px;font-weight:600" id="planName">Free Plan</div>
-                                    <div style="font-size:12.5px;color:var(--text-3)">Upgrade for unlimited forms, AI
-                                        analysis, and advanced exports</div>
-                                </div>
-                                <div class="spacer"></div><button class="btn btn-primary"
-                                    onclick="toast('Billing not configured in demo','info')">Upgrade to Pro</button>
+                            <p class="mb-12 color-text-3" style="font-size:13px">Use this key to authenticate requests to the SnapyForm V1 API. Keep it secret!</p>
+                            <div class="flex gap-8">
+                                <input type="password" class="input" id="apiKeyInput" readonly style="font-family:var(--font-mono);font-size:12px">
+                                <button class="btn btn-secondary" onclick="toggleApiKey()"><i data-lucide="eye" style="width:16px"></i></button>
+                                <button class="btn btn-secondary" onclick="copyApiKey()"><i data-lucide="copy" style="width:16px"></i></button>
                             </div>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-secondary" onclick="regenerateApiKey()">Regenerate API Key</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header"><div class="card-title">API Documentation</div></div>
+                        <div class="card-body">
+                            <p style="font-size:13px;color:var(--text-3)">Learn how to integrate SnapyForm with your own applications using our V1 API.</p>
+                            <a href="/docs/api" class="btn btn-primary btn-sm mt-8">View API Docs</a>
                         </div>
                     </div>
                 </div>
@@ -142,77 +151,18 @@
                 <!-- SECURITY -->
                 <div class="tab-content" id="tab-security">
                     <div class="card mb-16">
-                        <div class="card-header">
-                            <div class="card-title">Change Password</div>
-                        </div>
+                        <div class="card-header"><div class="card-title">Change Password</div></div>
                         <div class="card-body">
-                            <div class="field"><label class="label">Current Password</label><input type="password"
-                                    class="input" id="scur" placeholder="Your current password"></div>
-                            <div class="field"><label class="label">New Password</label><input type="password"
-                                    class="input" id="snew" placeholder="Min. 6 characters"></div>
-                            <div class="field"><label class="label">Confirm New Password</label><input type="password"
-                                    class="input" id="sconf" placeholder="Repeat new password"></div>
+                            <div class="field"><label class="label">Current Password</label><input type="password" class="input" id="scur"></div>
+                            <div class="field"><label class="label">New Password</label><input type="password" class="input" id="snew"></div>
                         </div>
-                        <div class="card-footer"><button class="btn btn-primary" onclick="changePassword()">Update
-                                Password</button></div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">Active Sessions</div>
-                        </div>
-                        <div class="card-body">
-                            <div class="flex items-center gap-12" style="padding:10px 0">
-                                <div>
-                                    <div style="font-size:13px;font-weight:500">Current Session</div>
-                                    <div style="font-size:12px;color:var(--text-3)">This browser • Active now</div>
-                                </div>
-                                <div class="spacer"></div><span class="badge badge-green">Active</span>
-                            </div>
-                            <div class="divider"></div>
-                            <button class="btn btn-secondary btn-sm"
-                                onclick="toast('All other sessions revoked','success')">Revoke All Other
-                                Sessions</button>
-                        </div>
+                        <div class="card-footer"><button class="btn btn-primary" onclick="changePassword()">Update Password</button></div>
                     </div>
                 </div>
 
                 <!-- APPEARANCE -->
                 <div class="tab-content" id="tab-appearance">
                     <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">Theme</div>
-                        </div>
-                        <div class="card-body">
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-                                <div onclick="setTheme('dark')"
-                                    style="cursor:pointer;border:2px solid var(--accent);border-radius:var(--radius-lg);overflow:hidden"
-                                    id="tdark">
-                                    <div
-                                        style="background:#09090b;height:60px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#a1a1aa">
-                                        Dark Mode</div>
-                                </div>
-                                <div onclick="setTheme('light')"
-                                    style="cursor:pointer;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden"
-                                    id="tlight">
-                                    <div
-                                        style="background:#f4f4f5;height:60px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#52525b">
-                                        Light Mode</div>
-                                </div>
-                            </div>
-                            <div style="font-size:12.5px;color:var(--text-3)">Your theme preference is saved to your
-                                account and synced across all sessions.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- NOTIFICATIONS -->
-                <div class="tab-content" id="tab-notifications">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">Email Notifications</div>
-                        </div>
-                        <div class="card-body">
-                            <div style="display:flex;flex-direction:column;gap:14px">
                                 <div class="flex items-center gap-12">
                                     <div>
                                         <div style="font-size:13.5px;font-weight:500">New response alerts</div>
@@ -302,7 +252,6 @@
             </div>
         </main>
     </div>
-
     <script>
         let user = null;
         window.addEventListener('DOMContentLoaded', async () => {
@@ -312,43 +261,103 @@
                 document.getElementById('uAvatar').textContent = user.avatar || '?';
                 document.getElementById('avatarPreview').textContent = user.avatar || '?';
                 document.getElementById('uName').textContent = user.name || 'User';
-                if (document.getElementById('uPlan')) document.getElementById('uPlan').textContent = (user.plan || 'Free') + ' Plan';
-                if (user.isAdmin && document.getElementById('adminNavItem')) document.getElementById('adminNavItem').style.display = '';
-                document.getElementById('planName').textContent = (user.plan || 'Free') + ' Plan';
-                const n = user.name?.split(' ') || [];
-                document.getElementById('pfirst').value = user.firstName || n[0] || '';
-                document.getElementById('plast').value = user.lastName || n.slice(1).join(' ') || '';
+                document.getElementById('uPlan').textContent = (user.plan || 'Free') + ' Plan';
+                if (user.isAdmin && document.getElementById('adminNavItem')) document.getElementById('adminNavItem').style.display = 'flex';
+                
+                document.getElementById('pfirst').value = user.firstName || '';
+                document.getElementById('plast').value = user.lastName || '';
                 document.getElementById('pemail').value = user.email || '';
-                document.getElementById('pcompany').value = user.company || '';
-                if (user.theme === 'light') { document.getElementById('tlight').style.borderWidth = '2px'; document.getElementById('tlight').style.borderColor = 'var(--accent)'; document.getElementById('tdark').style.border = '1px solid var(--border)'; }
+                document.getElementById('apiKeyInput').value = user.apiKey || '';
+                
+                loadTeams();
             }
+            lucide.createIcons();
         });
 
-        function switchTab(id, el) { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); el.classList.add('active'); document.getElementById('tab-' + id).classList.add('active'); }
+        function switchTab(id, el) { 
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); 
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); 
+            el.classList.add('active'); 
+            document.getElementById('tab-' + id).classList.add('active'); 
+        }
+
+        async function loadTeams() {
+            try {
+                const teams = await DocmoAPI.req('GET', '/teams');
+                const list = document.getElementById('teamsList');
+                if (!teams || !teams.length) {
+                    list.innerHTML = '<div class="text-center py-24 color-text-4">No teams created yet.</div>';
+                    return;
+                }
+                list.innerHTML = teams.map(t => `
+                    <div class="flex items-center gap-12 p-12 border-b">
+                        <div class="logo-mark" style="width:32px;height:32px;font-size:14px">${t.name[0]}</div>
+                        <div style="flex:1">
+                            <div style="font-weight:600">${DocmoAPI.escH(t.name)}</div>
+                            <div style="font-size:12px;color:var(--text-4)">${t.members.length} members</div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="manageTeam('${t.id}')">Manage</button>
+                    </div>
+                `).join('');
+            } catch (e) { console.error('Load teams failed:', e); }
+        }
+
+        async function createTeam() {
+            const name = prompt('Team Name:');
+            if (!name) return;
+            try {
+                await DocmoAPI.req('POST', '/teams', { name });
+                loadTeams();
+                toast('Team created!', 'success');
+            } catch (e) { toast(e.message, 'error'); }
+        }
+
+        function toggleApiKey() {
+            const i = document.getElementById('apiKeyInput');
+            i.type = i.type === 'password' ? 'text' : 'password';
+        }
+
+        function copyApiKey() {
+            navigator.clipboard.writeText(user.apiKey);
+            toast('API Key copied to clipboard', 'success');
+        }
+
+        async function regenerateApiKey() {
+            if (!confirm('Generating a new API key will invalidate the current one. Continue?')) return;
+            try {
+                const res = await DocmoAPI.req('POST', '/auth/api-key/regenerate');
+                user.apiKey = res.apiKey;
+                document.getElementById('apiKeyInput').value = res.apiKey;
+                toast('New API Key generated', 'success');
+            } catch (e) { toast(e.message, 'error'); }
+        }
 
         async function saveProfile() {
-            const fn = document.getElementById('pfirst').value.trim(), ln = document.getElementById('plast').value.trim();
+            const fn = document.getElementById('pfirst').value.trim();
+            const ln = document.getElementById('plast').value.trim();
             const name = (fn + ' ' + ln).trim();
-            try { await DocmoAPI.updateMe({ name, firstName: fn, lastName: ln, email: document.getElementById('pemail').value.trim(), company: document.getElementById('pcompany').value.trim(), avatar: (fn[0] || '') + (ln[0] || '').toUpperCase() || '?' }); toast('Profile updated', 'success'); }
-            catch (e) { toast(e.message, 'error'); }
+            try {
+                await DocmoAPI.updateMe({ name, firstName: fn, lastName: ln, email: document.getElementById('pemail').value.trim() });
+                toast('Profile updated', 'success');
+            } catch (e) { toast(e.message, 'error'); }
         }
 
         async function changePassword() {
-            const cur = document.getElementById('scur').value, nw = document.getElementById('snew').value, conf = document.getElementById('sconf').value;
-            if (!cur || !nw) return toast('Fill in all password fields', 'warning');
-            if (nw.length < 6) return toast('New password must be at least 6 characters', 'warning');
-            if (nw !== conf) return toast('Passwords do not match', 'warning');
-            try { await DocmoAPI.updateMe({ password: cur, newPassword: nw }); document.getElementById('scur').value = ''; document.getElementById('snew').value = ''; document.getElementById('sconf').value = ''; toast('Password updated successfully', 'success'); }
-            catch (e) { toast(e.message, 'error'); }
+            const cur = document.getElementById('scur').value;
+            const nw = document.getElementById('snew').value;
+            if (!cur || !nw) return toast('Fill in password fields', 'warning');
+            try {
+                await DocmoAPI.updateMe({ password: cur, newPassword: nw });
+                document.getElementById('scur').value = '';
+                document.getElementById('snew').value = '';
+                toast('Password updated', 'success');
+            } catch (e) { toast(e.message, 'error'); }
         }
 
         async function setTheme(t) {
             document.documentElement.setAttribute('data-theme', t);
-            document.getElementById('tdark').style.border = t === 'dark' ? '2px solid var(--accent)' : '1px solid var(--border)';
-            document.getElementById('tlight').style.border = t === 'light' ? '2px solid var(--accent)' : '1px solid var(--border)';
             try { await DocmoAPI.updateMe({ theme: t }); } catch { }
         }
     </script>
 </body>
-
 </html>

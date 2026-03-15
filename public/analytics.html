@@ -16,62 +16,54 @@
             <div class="sidebar-logo" onclick="window.location='/'">
                 <div class="logo-mark">S</div>
                 <span class="logo-text">SnapyForm</span>
-                <span class="logo-badge">Beta</span>
             </div>
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Workspace</div>
                 <div class="nav-item" onclick="window.location='/dashboard'">
-                    <div class="nav-icon-wrap">⊞</div><span class="nav-label">Dashboard</span>
+                    <div class="nav-icon-wrap"><i data-lucide="layout-grid"></i></div><span class="nav-label">Dashboard</span>
                 </div>
-                <div class="nav-item" onclick="window.location='/dashboard#forms'">
-                    <div class="nav-icon-wrap">📋</div><span class="nav-label">My Forms</span>
+                <div class="nav-item" onclick="window.location='/tables'">
+                    <div class="nav-icon-wrap"><i data-lucide="table"></i></div><span class="nav-label">Tables</span>
                 </div>
                 <div class="nav-item" onclick="window.location='/automation'">
-                    <div class="nav-icon-wrap">⚡</div><span class="nav-label">Automations</span>
+                    <div class="nav-icon-wrap"><i data-lucide="zap"></i></div><span class="nav-label">Automations</span>
                 </div>
                 <div class="nav-item" onclick="window.location='/templates'">
-                    <div class="nav-icon-wrap">◧</div><span class="nav-label">Templates</span>
+                    <div class="nav-icon-wrap"><i data-lucide="layout"></i></div><span class="nav-label">Templates</span>
                 </div>
             </div>
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Data & Performance</div>
                 <div class="nav-item" onclick="window.location='/responses'">
-                    <div class="nav-icon-wrap">≡</div><span class="nav-label">Responses</span>
+                    <div class="nav-icon-wrap"><i data-lucide="database"></i></div><span class="nav-label">Responses</span>
                 </div>
                 <div class="nav-item active" onclick="window.location='/analytics'">
-                    <div class="nav-icon-wrap">📈</div><span class="nav-label">Analytics</span>
+                    <div class="nav-icon-wrap"><i data-lucide="bar-chart-3"></i></div><span class="nav-label">Analytics</span>
                 </div>
                 <div class="nav-item" onclick="window.location='/export'">
-                    <div class="nav-icon-wrap">↓</div><span class="nav-label">Export</span>
+                    <div class="nav-icon-wrap"><i data-lucide="download"></i></div><span class="nav-label">Export</span>
                 </div>
             </div>
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Account</div>
                 <div class="nav-item" onclick="window.location='/settings'">
-                    <div class="nav-icon-wrap">◎</div><span class="nav-label">Settings</span>
-                </div>
-                <div class="nav-item" id="adminNavItem" style="display:none" onclick="window.location='/admin'">
-                    <div class="nav-icon-wrap">⚿</div><span class="nav-label">Admin</span><span class="admin-badge"
-                        style="margin-left:auto">ADMIN</span>
+                    <div class="nav-icon-wrap"><i data-lucide="settings"></i></div><span class="nav-label">Settings</span>
                 </div>
             </div>
             <div class="sidebar-footer">
                 <div class="user-widget" onclick="window.location='/settings'">
                     <div class="user-avatar" id="uAvatar">?</div>
-                    <div>
+                    <div class="user-info">
                         <div class="user-name" id="uName">Loading...</div>
                         <div class="user-plan" id="uPlan">Free Plan</div>
                     </div>
-                    <div class="spacer"></div>
-                    <span style="font-size:13px;color:var(--text-4);cursor:pointer;padding:4px"
-                        onclick="event.stopPropagation();DocmoAPI.logout()" title="Logout">⏻</span>
                 </div>
             </div>
         </aside>
 
         <main class="main">
             <div class="mobile-top-bar">
-                <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                <button class="mobile-menu-btn" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
                 <div class="logo-mark" style="width:24px;height:24px;font-size:12px">S</div>
                 <span class="logo-text" style="font-size:14px">SnapyForm</span>
             </div>
@@ -128,6 +120,30 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="card mb-20 bg-surface-2 border-accent">
+                    <div class="card-header flex items-center justify-between">
+                        <div class="flex items-center gap-12">
+                            <div class="nav-icon-wrap color-accent" style="background:var(--accent-alpha);padding:8px;border-radius:8px"><i data-lucide="sparkles"></i></div>
+                            <div>
+                                <div class="card-title">AI Data Insights</div>
+                                <div style="font-size:12px;color:var(--text-4)">Advanced AI analysis of your form responses</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" id="aiAnalyzeBtn" onclick="runAIAnalysis()">Generate Report</button>
+                    </div>
+                    <div class="card-body" id="aiInsightsWrap" style="display:none">
+                        <div class="ai-report-content" id="aiReport"></div>
+                    </div>
+                </div>
+
+                <style>
+                    .bg-surface-2 { background: var(--surface-2); }
+                    .border-accent { border: 1px solid var(--accent); }
+                    .ai-report-content { font-size: 14px; line-height: 1.6; }
+                    .ai-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; background: var(--accent); color: white; font-size: 11px; margin-bottom: 8px; }
+                    .insight-card { background: var(--surface-3); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid var(--accent); }
+                </style>
 
                 <div class="card">
                     <div class="card-header">
@@ -193,6 +209,33 @@
                 renderCharts(filterId);
                 renderTable();
             } catch (e) { toast('Error loading analytics: ' + e.message, 'error'); }
+            lucide.createIcons();
+        }
+
+        async function runAIAnalysis() {
+            const fid = document.getElementById('formFilter').value;
+            const btn = document.getElementById('aiAnalyzeBtn');
+            const wrap = document.getElementById('aiInsightsWrap');
+            const report = document.getElementById('aiReport');
+
+            if (fid === 'all') return toast('Please select a specific form for AI analysis', 'warning');
+            const form = allForms.find(f => f.id === fid);
+            const resp = allResponses.filter(r => r.formId === fid);
+            if (resp.length < 1) return toast('Not enough responses for analysis', 'warning');
+
+            btn.textContent = 'Analyzing...'; btn.disabled = true;
+            try {
+                const res = await DocmoAPI.req('POST', '/ai/analyze', { formTitle: form.title, responses: resp });
+                wrap.style.display = 'block';
+                report.innerHTML = `
+                    <div class="ai-badge">SENTIMENT: ${res.sentimentScore}/100</div>
+                    <p class="mb-12">${res.summary}</p>
+                    <div style="font-weight:600;margin-bottom:8px">Key Insights</div>
+                    ${res.insights.map(i => `<div class="insight-card">${i}</div>`).join('')}
+                    <div style="font-weight:600;margin:16px 0 8px">Recommendations</div>
+                    <ul style="padding-left:20px">${res.recommendations.map(r => `<li>${r}</li>`).join('')}</ul>
+                `;
+            } catch (e) { toast('AI Error: ' + e.message, 'error'); } finally { btn.textContent = 'Generate Report'; btn.disabled = false; }
         }
 
         function renderStats(filterId) {
